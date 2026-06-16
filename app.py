@@ -21,6 +21,7 @@ from PIL import Image, ImageOps
 # (MAX_CONTENT_LENGTH acota el archivo, no el tamaño descomprimido).
 Image.MAX_IMAGE_PIXELS = 64_000_000  # ~64 MP
 
+import crypto
 import db
 import i18n
 import mailer
@@ -203,7 +204,7 @@ def _notificar(envio, evento):
     if rem and (rem.get("smtp_user") or "").strip():
         from_addr = rem.get("email_from")
         smtp_user = rem.get("smtp_user")
-        smtp_pw = rem.get("smtp_password")
+        smtp_pw = crypto.dec(rem.get("smtp_password"))
     ok, msg = mailer.enviar(to, subj, body, adjunto_path=adj, adjunto_nombre=adjn,
                             from_addr=from_addr, user=smtp_user, password=smtp_pw)
     flash(tr("flash.email_sent") if ok else tr("flash.email_failed", msg=msg),
@@ -651,10 +652,11 @@ def admin_guardar():
         if k in request.form:
             items = [ln.strip() for ln in request.form.get(k, "").splitlines() if ln.strip()]
             cambios[k] = json.dumps(items, ensure_ascii=False)
-    # contraseña SMTP: sólo se actualiza si se escribió algo (no se pisa con vacío)
+    # contraseña SMTP: sólo se actualiza si se escribió algo (no se pisa con vacío);
+    # se guarda cifrada at-rest.
     pw = request.form.get("smtp_password", "")
     if pw:
-        cambios["smtp_password"] = pw
+        cambios["smtp_password"] = crypto.enc(pw)
     # logo de marca
     ok, val = _guardar_logo(request.files.get("logo"), "brand")
     if ok and val:

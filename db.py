@@ -10,6 +10,8 @@ import sqlite3
 import time
 from datetime import datetime, timezone, timedelta
 
+import crypto
+
 DB_PATH = os.environ.get("ETIQUETAS_DB", "/data/etiquetas.db")
 
 # Defaults sembrados en la primera ejecución (preset Uruguay). Editables luego
@@ -513,7 +515,7 @@ def crear_remitente(r):
             "es_default, email_from, smtp_user, smtp_password) VALUES (?,?,?,?,?,?,?,?,?)",
             (now_iso(), r["nombre"], r.get("celular"), r.get("localidad"),
              r.get("logo"), int(r.get("es_default") or 0),
-             r.get("email_from"), r.get("smtp_user"), r.get("smtp_password")),
+             r.get("email_from"), r.get("smtp_user"), crypto.enc(r.get("smtp_password"))),
         )
         return cur.lastrowid
 
@@ -528,7 +530,7 @@ def actualizar_remitente(rem_id, r):
     for col in ("logo", "smtp_password"):
         if r.get(col) is not None:
             sets.append(f"{col}=?")
-            params.append(r[col])
+            params.append(crypto.enc(r[col]) if col == "smtp_password" else r[col])
     params.append(rem_id)
     with get_conn() as conn:
         conn.execute(f"UPDATE remitentes SET {', '.join(sets)} WHERE id=?", params)

@@ -7,6 +7,7 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 
+import crypto
 import db
 
 
@@ -36,7 +37,8 @@ def enviar(destino, asunto, cuerpo, adjunto_path=None, adjunto_nombre=None,
         return False, "SMTP no configurado"
 
     user = user or db.get_setting("smtp_user")
-    pw = password if password is not None else db.get_setting("smtp_password")
+    # password explícita (por remitente) ya viene en claro; la global se descifra
+    pw = password if password is not None else crypto.dec(db.get_setting("smtp_password"))
 
     msg = EmailMessage()
     msg["From"] = _hdr(from_addr) or _hdr(_remitente()) or _hdr(user) or ""

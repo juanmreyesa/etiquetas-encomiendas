@@ -177,10 +177,12 @@ def test_email_from_sin_user_usa_global(client, monkeypatch):
 
 
 def test_borrar_user_remitente_limpia_password(client):
+    import crypto
     rid = db.crear_remitente({"nombre": "ConCuenta", "celular": "099", "localidad": "MVD",
                               "logo": None, "es_default": 0, "email_from": "X <x@dom>",
                               "smtp_user": "x@dom", "smtp_password": "secret"})
-    assert db.get_remitente(rid)["smtp_password"] == "secret"
+    stored = db.get_remitente(rid)["smtp_password"]
+    assert stored != "secret" and crypto.dec(stored) == "secret"   # cifrada at-rest
     client.post(f"/admin/remitentes/{rid}", data={"nombre": "ConCuenta",
                 "smtp_user": "", "email_from": "", "smtp_password": ""},
                 content_type="multipart/form-data", follow_redirects=True)
