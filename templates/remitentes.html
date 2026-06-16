@@ -24,7 +24,7 @@
     <div class="ag-acciones">
       <a class="btn" href="{{ url_for('remitente_editar', rem_id=r.id) }}">{{ t('btn.edit') }}</a>
       <form method="post" action="{{ url_for('remitente_eliminar', rem_id=r.id) }}"
-            onsubmit="return confirm('{{ t('confirm.delete_recipient') }}')">
+            onsubmit="return confirm('{{ t('confirm.delete_sender') }}')">
         <button class="btn danger" type="submit">{{ t('btn.delete') }}</button>
       </form>
     </div>

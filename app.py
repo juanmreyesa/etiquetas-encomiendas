@@ -17,6 +17,10 @@ from flask import (Flask, Response, abort, flash, make_response, redirect,
                    render_template, request, send_file, url_for)
 from PIL import Image, ImageOps
 
+# Cota contra "decompression bombs": rechaza imágenes con demasiados píxeles
+# (MAX_CONTENT_LENGTH acota el archivo, no el tamaño descomprimido).
+Image.MAX_IMAGE_PIXELS = 64_000_000  # ~64 MP
+
 import db
 import i18n
 import mailer
@@ -191,15 +195,17 @@ def _notificar(envio, evento):
             p = os.path.join(TICKETS_DIR, os.path.basename(foto))
             if os.path.exists(p):
                 adj, adjn = p, foto
-    # Cuenta de envío: si el remitente del envío tiene su propio email, se usa
-    # esa cuenta (from + auth); si no, el SMTP global.
+    # Cuenta de envío: el override por remitente es TODO-O-NADA — solo se usa si el
+    # remitente tiene su propio usuario SMTP (autenticar como X y mandar From Y
+    # distinto haría que el correo caiga en spam/sea rechazado). Si no, SMTP global.
     rem = db.get_remitente(envio["rem_id"]) if envio.get("rem_id") else None
-    from_addr = rem.get("email_from") if rem else None
-    smtp_user = rem.get("smtp_user") if rem else None
-    smtp_pw = rem.get("smtp_password") if rem else None
+    from_addr = smtp_user = smtp_pw = None
+    if rem and (rem.get("smtp_user") or "").strip():
+        from_addr = rem.get("email_from")
+        smtp_user = rem.get("smtp_user")
+        smtp_pw = rem.get("smtp_password")
     ok, msg = mailer.enviar(to, subj, body, adjunto_path=adj, adjunto_nombre=adjn,
-                            from_addr=from_addr, user=smtp_user or None,
-                            password=smtp_pw if smtp_user else None)
+                            from_addr=from_addr, user=smtp_user, password=smtp_pw)
     flash(tr("flash.email_sent") if ok else tr("flash.email_failed", msg=msg),
           "ok" if ok else "error")
 
@@ -589,8 +595,12 @@ def remitente_actualizar(rem_id):
         base["logo"] = val         # nuevo logo
     else:
         base["logo"] = None        # sin cambios
-    # contraseña SMTP del remitente: vacío = no tocar; texto = setear
-    base["smtp_password"] = request.form.get("smtp_password") or None
+    # contraseña SMTP del remitente: vacío = no tocar; texto = setear.
+    # Si se borró el usuario propio, se limpia la contraseña (no dejar huérfana).
+    if not base["smtp_user"]:
+        base["smtp_password"] = ""
+    else:
+        base["smtp_password"] = request.form.get("smtp_password") or None
     db.actualizar_remitente(rem_id, base)
     flash(tr("flash.sender_updated"), "ok")
     return redirect(url_for("remitentes"))
@@ -699,4 +709,5 @@ def health():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
+    # debug solo si se pide explícitamente (el debugger de Werkzeug permite RCE)
+    app.run(host="0.0.0.0", port=8000, debug=os.environ.get("FLASK_DEBUG") == "1")

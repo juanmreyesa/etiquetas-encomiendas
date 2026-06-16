@@ -160,7 +160,9 @@ TRANSLATIONS = {
         "check.remove_logo": "Quitar el logo",
         "check.is_default": "Usar como remitente por defecto",
         "settings.sender_email": "Email saliente propio (opcional)",
-        "help.sender_email": "Si lo completás, las notificaciones de envíos con este remitente salen desde esta cuenta (con el servidor SMTP global). Si lo dejás vacío, usa la cuenta global.",
+        "help.sender_email": "Si cargás usuario y contraseña SMTP propios, las notificaciones de envíos con este remitente salen desde esta cuenta (con el servidor SMTP global). Si lo dejás vacío, usa la cuenta global. Para usar un «From» propio hace falta también el usuario/clave propios.",
+        "field.email_from_ph": "Marca <correo@dominio>",
+        "confirm.delete_sender": "¿Eliminar este remitente?",
 
         # --- admin / configuración ---
         "page.settings": "Configuración",
@@ -392,7 +394,9 @@ TRANSLATIONS = {
         "check.remove_logo": "Remove the logo",
         "check.is_default": "Use as default sender",
         "settings.sender_email": "Own outgoing email (optional)",
-        "help.sender_email": "If set, notifications for shipments with this sender are sent from this account (using the global SMTP server). If empty, the global account is used.",
+        "help.sender_email": "If you set an own SMTP user and password, notifications for shipments with this sender are sent from this account (using the global SMTP server). If empty, the global account is used. Using an own “From” also requires the own user/password.",
+        "field.email_from_ph": "Brand <mail@domain>",
+        "confirm.delete_sender": "Delete this sender?",
 
         "page.settings": "Settings",
         "settings.brand": "Brand",

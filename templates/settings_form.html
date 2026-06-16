@@ -104,7 +104,7 @@
     </label>
     <label>{{ t('field.smtp_password') }}
       <input name="smtp_password" type="password" value="" autocomplete="new-password"
-             placeholder="••••••••">
+             placeholder="{{ '••••••••' if s.smtp_password else '' }}">
     </label>
   </div>
   <label>{{ t('field.smtp_from') }}

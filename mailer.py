@@ -10,6 +10,11 @@ from email.message import EmailMessage
 import db
 
 
+def _hdr(s):
+    """Sanea un valor de cabecera: sin CR/LF (evita header injection)."""
+    return (s or "").replace("\r", " ").replace("\n", " ").strip()
+
+
 def smtp_configurado():
     return db.get_bool("smtp_enabled") and bool(db.get_setting("smtp_host"))
 
@@ -34,9 +39,9 @@ def enviar(destino, asunto, cuerpo, adjunto_path=None, adjunto_nombre=None,
     pw = password if password is not None else db.get_setting("smtp_password")
 
     msg = EmailMessage()
-    msg["From"] = (from_addr or "").strip() or _remitente() or user
-    msg["To"] = destino
-    msg["Subject"] = asunto
+    msg["From"] = _hdr(from_addr) or _hdr(_remitente()) or _hdr(user) or ""
+    msg["To"] = _hdr(destino)
+    msg["Subject"] = _hdr(asunto)
     msg.set_content(cuerpo)
 
     if adjunto_path:

@@ -163,7 +163,8 @@ def norm_nombre(s):
 
 
 def norm_email(s):
-    return (s or "").strip()
+    # sin CR/LF/espacios internos (defensa contra header injection en emails)
+    return "".join((s or "").split())
 
 
 def norm_tel(s):

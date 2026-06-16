@@ -39,7 +39,7 @@
     <p class="meta">{{ t('help.sender_email') }}</p>
     <label>{{ t('field.smtp_from') }}
       <input name="email_from" value="{{ r.email_from if r else '' }}"
-             placeholder="Encomiendas &lt;encomiendas@dominio&gt;">
+             placeholder="{{ t('field.email_from_ph') }}">
     </label>
     <div class="row">
       <label>{{ t('field.smtp_user') }}

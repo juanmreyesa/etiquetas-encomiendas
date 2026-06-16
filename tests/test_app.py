@@ -159,6 +159,40 @@ def test_email_sin_override_usa_global(client, monkeypatch):
     assert not cap.get("user")
 
 
+def test_email_from_sin_user_usa_global(client, monkeypatch):
+    # email_from propio pero SIN usuario propio -> override ignorado (usa global)
+    cap = {}
+    monkeypatch.setattr(appmod.mailer, "enviar",
+                        lambda *a, **k: (cap.update(k), (True, "ok"))[1])
+    db.set_settings({"smtp_enabled": "1", "smtp_host": "h", "smtp_user": "global@x.com",
+                     "notify_on_print": "1"})
+    rid = db.crear_remitente({"nombre": "SoloFrom", "celular": "099", "localidad": "MVD",
+                              "logo": None, "es_default": 0,
+                              "email_from": "X <x@dom>", "smtp_user": "", "smtp_password": ""})
+    client.post("/envios", data={"remitente_id": str(rid), "dest_nombre": "Ana",
+                "dest_email": "ana@x.com", "dest_departamento": "Salto",
+                "entrega_tipo": "agencia", "salida": "impresora"},
+                content_type="multipart/form-data", follow_redirects=True)
+    assert not cap.get("from_addr") and not cap.get("user")
+
+
+def test_borrar_user_remitente_limpia_password(client):
+    rid = db.crear_remitente({"nombre": "ConCuenta", "celular": "099", "localidad": "MVD",
+                              "logo": None, "es_default": 0, "email_from": "X <x@dom>",
+                              "smtp_user": "x@dom", "smtp_password": "secret"})
+    assert db.get_remitente(rid)["smtp_password"] == "secret"
+    client.post(f"/admin/remitentes/{rid}", data={"nombre": "ConCuenta",
+                "smtp_user": "", "email_from": "", "smtp_password": ""},
+                content_type="multipart/form-data", follow_redirects=True)
+    assert db.get_remitente(rid)["smtp_password"] == ""   # password huérfana limpiada
+
+
+def test_mailer_sanea_crlf_en_cabeceras():
+    assert "\n" not in appmod.mailer._hdr("a@x.com\nBcc: y@z.com")
+    assert "\r" not in appmod.mailer._hdr("a@x.com\r\nSubject: x")
+    assert db.norm_email("  a@x.com\n ") == "a@x.com"
+
+
 def test_remitente_crud_via_http(client):
     r = client.post("/admin/remitentes", data={"nombre": "transportes vega",
                     "celular": "099", "localidad": "MVD"},

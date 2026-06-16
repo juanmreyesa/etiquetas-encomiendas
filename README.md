@@ -66,7 +66,8 @@ national-ID check digit) that you can edit or replace.
 - **Despacho**: marcar como despachado y adjuntar **foto del ticket**.
 - **Notificaciones por email** al receptor (si tiene email): al crear el envío
   (primera impresión, no en reimpresiones) y al despachar (adjunta la foto del
-  ticket). Opcional, por SMTP.
+  ticket). Opcional, por SMTP. Cada remitente puede tener su **propia cuenta
+  saliente** (From + usuario/clave SMTP); si no, usa la cuenta global.
 - **Modo oscuro** y **bilingüe** (es/en), conmutables desde el encabezado.
 - Marca y paleta configurables; **guard de origen** opcional (no enviar al mismo
   departamento que el remitente) y **validación de documento** pluggable.
@@ -108,7 +109,8 @@ QR) y SMTP. Los valores por defecto son un preset de Uruguay; cambialos a gusto.
 - **Dispatch**: mark as dispatched and attach a **receipt photo**.
 - **Email notifications** to the recipient (when an email is set): when the
   shipment is created (first print, not on reprints) and when dispatched
-  (attaches the receipt photo). Optional, over SMTP.
+  (attaches the receipt photo). Optional, over SMTP. Each sender can have its
+  **own outgoing account** (From + SMTP user/password); otherwise the global one.
 - **Dark mode** and **bilingual** (es/en), toggled from the header.
 - Configurable brand and palette; optional **origin guard** (don't ship to the
   sender's own region) and a pluggable **ID validation**.

@@ -21,7 +21,8 @@ services:
       # Defaults del primer arranque; después editá todo desde /admin.
       PRINTER: Epson_L3210
       BASE_URL: http://localhost:8088
-      SECRET_KEY: change-me-please
+      # CAMBIAR: generá uno con  python -c "import secrets;print(secrets.token_hex(32))"
+      SECRET_KEY: CHANGE_ME
       HOME: /tmp          # el uid puede no tener entrada en /etc/passwd del contenedor
       # Fallback si el socket de CUPS fallara: imprimir por IPP a otro host
       # CUPS_SERVER: 192.168.1.10
