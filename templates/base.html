@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="{{ s.color_primary }}">
+  <title>{% block title %}{% endblock %} · {{ s.brand_name }}</title>
+  <script>
+    // Aplica el tema guardado ANTES de pintar (evita el flash claro→oscuro).
+    (function () {
+      try {
+        var t = localStorage.getItem('tema');
+        if (t === 'dark' || t === 'light')
+          document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {# Override de la paleta desde la configuración (después del CSS para ganar). #}
+  <style>
+    :root {
+      --emerald: {{ s.color_primary }};
+      --emerald-deep: {{ s.color_primary_deep }};
+      --gold: {{ s.color_accent }};
+      --emerald-soft: color-mix(in srgb, {{ s.color_primary }} 14%, white);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --emerald: {{ s.color_primary }};
+        --emerald-deep: color-mix(in srgb, {{ s.color_primary_deep }} 55%, white);
+        --emerald-soft: color-mix(in srgb, {{ s.color_primary }} 26%, black);
+      }
+    }
+    :root[data-theme="dark"] {
+      --emerald: {{ s.color_primary }};
+      --emerald-deep: color-mix(in srgb, {{ s.color_primary_deep }} 55%, white);
+      --emerald-soft: color-mix(in srgb, {{ s.color_primary }} 26%, black);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="{{ url_for('index') }}">
+      {% if s.logo %}
+        <img class="brand-logo" src="{{ url_for('brand_logo') }}" alt="{{ s.brand_name }}">
+      {% else %}
+        <span class="brand-mark"></span>
+      {% endif %}
+      <span class="brand-name">{{ s.brand_name }}</span>
+    </a>
+    <nav>
+      <a href="{{ url_for('index') }}">{{ t('nav.new') }}</a>
+      <a href="{{ url_for('destinatarios') }}">{{ t('nav.recipients') }}</a>
+      <a href="{{ url_for('historico') }}">{{ t('nav.history') }}</a>
+      <a href="{{ url_for('remitentes') }}">{{ t('nav.senders') }}</a>
+      <a href="{{ url_for('admin') }}">{{ t('nav.admin') }}</a>
+    </nav>
+    <div class="header-tools">
+      <a class="lang-toggle" href="{{ url_for('set_idioma', lang='en' if lang == 'es' else 'es') }}"
+         aria-label="{{ t('lang.switch_aria') }}">{{ t('lang.switch_to') }}</a>
+      <button id="tema-toggle" class="tema-toggle" type="button"
+              aria-label="{{ t('theme.aria') }}">🌓</button>
+    </div>
+  </header>
+
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    // Toggle de tema: cicla automático → claro → oscuro.
+    (function () {
+      var btn = document.getElementById('tema-toggle');
+      if (!btn) return;
+      var iconos = { auto: '🌓', light: '☀️', dark: '🌙' };
+      function actual() {
+        var t = null;
+        try { t = localStorage.getItem('tema'); } catch (e) {}
+        return (t === 'light' || t === 'dark') ? t : 'auto';
+      }
+      function aplicar(modo) {
+        if (modo === 'auto') {
+          document.documentElement.removeAttribute('data-theme');
+          try { localStorage.removeItem('tema'); } catch (e) {}
+        } else {
+          document.documentElement.setAttribute('data-theme', modo);
+          try { localStorage.setItem('tema', modo); } catch (e) {}
+        }
+        btn.textContent = iconos[modo];
+      }
+      aplicar(actual());
+      btn.addEventListener('click', function () {
+        var orden = ['auto', 'light', 'dark'];
+        aplicar(orden[(orden.indexOf(actual()) + 1) % 3]);
+      });
+    })();
+  </script>
+</body>
+</html>

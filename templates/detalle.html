@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ t('page.shipment_no', n='%05d' % e.id) }}{% endblock %}
+{% block content %}
+<h1>{{ t('page.shipment_no', n='%05d' % e.id) }}</h1>
+
+<div class="card detalle">
+  {% if e.paga_destino %}<div class="banner">« {{ t('check.pays_dest') }} »</div>{% endif %}
+
+  <h2>{{ t('heading.sender') }}</h2>
+  <p>{{ e.rem_nombre or s.brand_name }}{% if e.rem_celular %} · {{ t('pdf.phone_inline') }} {{ e.rem_celular }}{% endif %}{% if e.rem_localidad %} · {{ e.rem_localidad }}{% endif %}</p>
+
+  <h2>{{ t('heading.recipient') }}</h2>
+  <p class="grande">{{ e.dest_nombre }}</p>
+  <dl>
+    {% if e.dest_cedula %}<dt>{{ t('label.id') }}</dt><dd>{{ e.dest_cedula }}</dd>{% endif %}
+    {% if e.dest_celular %}<dt>{{ t('label.phone') }}</dt><dd>{{ e.dest_celular }}</dd>{% endif %}
+    {% if e.dest_email %}<dt>{{ t('label.email') }}</dt><dd>{{ e.dest_email }}</dd>{% endif %}
+    {% if e.dest_localidad %}<dt>{{ t('label.locality') }}</dt><dd>{{ e.dest_localidad }}</dd>{% endif %}
+    {% if e.dest_departamento %}<dt>{{ t('label.region') }}</dt><dd>{{ e.dest_departamento }}</dd>{% endif %}
+    <dt>{{ t('label.delivery') }}</dt>
+    <dd>{{ t('delivery.agency') if e.entrega_tipo == 'agencia' else t('delivery.home') }}
+        {% if e.entrega_detalle %}— {{ e.entrega_detalle }}{% endif %}</dd>
+    {% if e.contenido %}<dt>{{ t('label.contents') }}</dt><dd>{{ e.contenido }}</dd>{% endif %}
+  </dl>
+
+  <p class="meta">
+    {{ t('meta.created') }}: {{ fmt_dt(e.created_at) }}
+    {% if e.last_printed_at %} · {{ t('meta.last_printed') }}: {{ fmt_dt(e.last_printed_at) }}{% endif %}
+    {% if e.reimpresiones %} · {{ t('meta.reprints') }}: {{ e.reimpresiones }}{% endif %}
+    {% if not e.incluir_qr %} · {{ t('meta.no_qr') }}{% endif %}
+    {% if not e.incluir_firma %} · {{ t('meta.no_signature') }}{% endif %}
+    {% if e.gris %} · {{ t('meta.grayscale') }}{% endif %}
+  </p>
+</div>
+
+<div class="card despacho">
+  <h2>{{ t('heading.dispatch') }}</h2>
+  {% if e.despachado_at %}
+    <p class="estado-ok">{{ t('dispatch.done', date=fmt_dt(e.despachado_at)) }}</p>
+  {% else %}
+    <p class="meta">{{ t('dispatch.pending') }}</p>
+  {% endif %}
+
+  {% if e.ticket_foto %}
+    <a class="ticket-thumb" href="{{ url_for('ticket_foto', envio_id=e.id) }}" target="_blank">
+      <img src="{{ url_for('ticket_foto', envio_id=e.id) }}" alt="{{ t('ticket.alt') }}">
+    </a>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('despachar', envio_id=e.id) }}"
+        enctype="multipart/form-data" class="despacho-form">
+    <label class="file-label">
+      {{ t('dispatch.change_photo') if e.ticket_foto else t('dispatch.photo_optional') }}
+      <input type="file" name="ticket" accept="image/*" capture="environment">
+    </label>
+    <button type="submit" class="primary">
+      {{ t('dispatch.update') if e.despachado_at else t('dispatch.mark') }}
+    </button>
+  </form>
+
+  {% if e.despachado_at %}
+  <form method="post" action="{{ url_for('revertir_despacho', envio_id=e.id) }}" class="revertir">
+    <button type="submit" class="danger">{{ t('dispatch.revert') }}</button>
+  </form>
+  {% endif %}
+</div>
+
+<div class="acciones">
+  <form method="post" action="{{ url_for('reimprimir', envio_id=e.id) }}">
+    <button type="submit" class="primary">{{ t('btn.reprint') }}</button>
+  </form>
+  <a class="btn" href="{{ url_for('pdf', envio_id=e.id) }}" target="_blank">{{ t('btn.view_pdf') }}</a>
+  <a class="btn" href="{{ url_for('index', duplicar=e.id) }}">{{ t('btn.duplicate') }}</a>
+  <form method="post" action="{{ url_for('eliminar', envio_id=e.id) }}"
+        onsubmit="return confirm('{{ t('confirm.delete_shipment') }}')">
+    <button type="submit" class="btn danger">{{ t('btn.delete_shipment') }}</button>
+  </form>
+</div>
+{% endblock %}

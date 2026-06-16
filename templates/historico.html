@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.history') }}{% endblock %}
+{% block content %}
+<h1>{{ t('page.history') }}</h1>
+
+<form method="get" action="{{ url_for('historico') }}" class="search">
+  <input name="q" value="{{ q }}" placeholder="{{ t('search.shipments_ph') }}">
+  <button type="submit">{{ t('btn.search') }}</button>
+  {% if q %}<a class="clear" href="{{ url_for('historico') }}">✕</a>{% endif %}
+</form>
+
+{% if envios %}
+<p class="export-bar">
+  <a class="btn" href="{{ url_for('historico_csv', q=q) }}">{{ t('btn.export_csv') }}{{ t('export.filtered') if q }}</a>
+</p>
+
+<ul class="lista">
+  {% for e in envios %}
+  <li>
+    <a href="{{ url_for('detalle', envio_id=e.id) }}">
+      <span class="num">{{ t('pdf.number') }} {{ '%05d' % e.id }}</span>
+      <span class="nombre">{{ e.dest_nombre }}</span>
+      <span class="meta">
+        {% if e.dest_localidad %}{{ e.dest_localidad }} ({{ e.dest_departamento }}){% else %}{{ e.dest_departamento }}{% endif %} ·
+        {{ t('delivery.agency_short') if e.entrega_tipo == 'agencia' else t('delivery.home_short') }} ·
+        {{ fmt_dt(e.created_at) }}
+      </span>
+      {% if e.despachado_at %}<span class="tag ok">{{ t('tag.dispatched') }}</span>{% endif %}
+      {% if e.paga_destino %}<span class="tag">{{ t('check.pays_dest') }}</span>{% endif %}
+      {% if e.reimpresiones %}<span class="tag alt">{{ t('tag.reprints', n=e.reimpresiones) }}</span>{% endif %}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="vacio">{{ t('empty.no_shipments_match') if q else t('empty.no_shipments') }}</p>
+{% endif %}
+{% endblock %}

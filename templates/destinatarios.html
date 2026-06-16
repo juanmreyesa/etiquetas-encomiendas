@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.recipients') }}{% endblock %}
+{% block content %}
+<h1>{{ t('page.recipients') }}</h1>
+
+<form method="get" action="{{ url_for('destinatarios') }}" class="search">
+  <input name="q" value="{{ q }}" placeholder="{{ t('search.recipients_ph') }}">
+  <button type="submit">{{ t('btn.search') }}</button>
+  {% if q %}<a class="clear" href="{{ url_for('destinatarios') }}">✕</a>{% endif %}
+</form>
+
+<p class="export-bar">
+  <a class="btn primary" href="{{ url_for('destinatario_nuevo') }}">{{ t('btn.new_recipient') }}</a>
+</p>
+
+{% if destinatarios %}
+<ul class="lista">
+  {% for d in destinatarios %}
+  <li class="agenda-item">
+    <div class="ag-info">
+      <span class="nombre">{{ d.nombre }}</span>
+      <span class="meta">
+        {% if d.cedula %}{{ t('list.id_prefix') }} {{ d.cedula }} · {% endif %}
+        {% if d.celular %}{{ d.celular }} · {% endif %}
+        {% if d.email %}{{ d.email }} · {% endif %}
+        {% if d.localidad %}{{ d.localidad }} ({{ d.departamento }}){% else %}{{ d.departamento }}{% endif %}
+        {% if d.entrega_detalle %}
+          · {{ t('delivery.agency_short') if d.entrega_tipo == 'agencia' else t('delivery.home_short') }}: {{ d.entrega_detalle }}
+        {% endif %}
+      </span>
+    </div>
+    <div class="ag-acciones">
+      <a class="btn primary" href="{{ url_for('index', destinatario=d.id) }}">{{ t('btn.use') }}</a>
+      <a class="btn" href="{{ url_for('destinatario_editar', dest_id=d.id) }}">{{ t('btn.edit') }}</a>
+      <form method="post" action="{{ url_for('destinatario_eliminar', dest_id=d.id) }}"
+            onsubmit="return confirm('{{ t('confirm.delete_recipient') }}')">
+        <button class="btn danger" type="submit">{{ t('btn.delete') }}</button>
+      </form>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="vacio">{{ t('empty.no_recipients_match') if q else t('empty.no_recipients') }}</p>
+{% endif %}
+{% endblock %}

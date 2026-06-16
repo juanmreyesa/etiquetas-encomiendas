@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ t('page.edit_sender') if r else t('page.new_sender') }}{% endblock %}
+{% block content %}
+<h1>{{ t('page.edit_sender') if r else t('page.new_sender') }}</h1>
+
+<form method="post" action="{{ action }}" class="card" enctype="multipart/form-data">
+  <label>{{ t('field.name') }} *
+    <input name="nombre" required autofocus value="{{ r.nombre if r else '' }}">
+  </label>
+
+  <div class="row">
+    <label>{{ t('field.phone') }}
+      <input name="celular" inputmode="tel" value="{{ r.celular if r else '' }}">
+    </label>
+    <label>{{ t('field.locality') }}
+      <input name="localidad" value="{{ r.localidad if r else '' }}"
+             placeholder="{{ t('field.locality_ph') }}">
+    </label>
+  </div>
+
+  <label>{{ t('field.sender_logo') }}
+    <input type="file" name="logo" accept="image/*">
+  </label>
+  {% if r and r.logo %}
+  <div class="rem-preview">
+    <img class="rem-logo" src="{{ url_for('remitente_logo', rem_id=r.id) }}" alt="">
+    <label class="checkbox"><input type="checkbox" name="quitar_logo">
+      <span>{{ t('check.remove_logo') }}</span></label>
+  </div>
+  {% endif %}
+
+  <label class="checkbox">
+    <input type="checkbox" name="es_default" {{ 'checked' if r and r.es_default }}>
+    <span>{{ t('check.is_default') }}</span>
+  </label>
+
+  <button type="submit" class="primary">{{ t('btn.save') }}</button>
+  <a class="btn" href="{{ url_for('remitentes') }}">{{ t('btn.cancel') }}</a>
+</form>
+{% endblock %}

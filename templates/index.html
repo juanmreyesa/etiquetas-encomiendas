@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% block title %}{{ t('page.new_shipment') }}{% endblock %}
+{% block content %}
+<h1>{{ t('page.new_shipment') }}</h1>
+
+<form method="post" action="{{ url_for('crear') }}" class="card">
+  {% if agendados %}
+  <label>{{ t('form.choose_from_agenda') }}
+    <select onchange="if(this.value) location.href='?destinatario=' + this.value">
+      <option value="">{{ t('form.agenda_placeholder') }}</option>
+      {% for d in agendados %}
+        <option value="{{ d.id }}">{{ d.nombre }}{% if d.cedula %} ({{ d.cedula }}){% endif %}</option>
+      {% endfor %}
+    </select>
+  </label>
+  {% endif %}
+
+  <fieldset class="remitente">
+    <legend>{{ t('legend.sender') }}</legend>
+    {% if remitentes %}
+    <label>{{ t('field.sender') }}
+      <select id="remitente_id" name="remitente_id">
+        {% for r in remitentes %}
+        <option value="{{ r.id }}"
+                data-nombre="{{ r.nombre }}"
+                data-cel="{{ r.celular or '' }}"
+                data-loc="{{ r.localidad or '' }}"
+                data-logo="{{ url_for('remitente_logo', rem_id=r.id) if r.logo else '' }}"
+                {{ 'selected' if (pre and pre.rem_nombre == r.nombre) or (not pre and r.es_default) }}>
+          {{ r.nombre }}{% if r.celular %} · {{ r.celular }}{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="rem-preview">
+      <img class="rem-logo" id="rem-logo" alt="" hidden>
+      <span id="rem-preview-text"></span>
+    </div>
+    {% else %}
+    <p class="field-msg warn">{{ t('form.no_senders') }}
+      <a href="{{ url_for('remitente_nuevo') }}">＋</a></p>
+    {% endif %}
+  </fieldset>
+
+  <label>{{ t('field.recipient_name') }} *
+    <input id="dest_nombre" name="dest_nombre" required autofocus
+           value="{{ pre.dest_nombre if pre else '' }}">
+  </label>
+
+  <div class="row">
+    <label>{{ t('field.id_number') }}
+      <input id="dest_cedula" name="dest_cedula" inputmode="numeric"
+             value="{{ pre.dest_cedula if pre else '' }}">
+      <small id="ci-msg" class="field-msg"></small>
+    </label>
+    <label>{{ t('field.phone') }}
+      <input id="dest_celular" name="dest_celular" inputmode="tel"
+             value="{{ pre.dest_celular if pre else '' }}">
+    </label>
+  </div>
+  <div id="autocomplete-hint" class="field-msg hint" hidden></div>
+
+  <label>{{ t('field.email') }}
+    <input id="dest_email" name="dest_email" type="email"
+           value="{{ pre.dest_email if pre else '' }}"
+           placeholder="{{ t('field.email_ph') }}">
+  </label>
+
+  <div class="row">
+    <label>{{ t('field.region') }}
+      <select id="dest_departamento" name="dest_departamento">
+        <option value="">{{ t('select.choose') }}</option>
+        {% for d in regions %}
+          <option value="{{ d }}" {{ 'selected' if pre and pre.dest_departamento == d }}>{{ d }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>{{ t('field.dest_locality') }}
+      <input id="dest_localidad" name="dest_localidad"
+             value="{{ pre.dest_localidad if pre else '' }}"
+             placeholder="{{ t('field.dest_locality_ph') }}">
+    </label>
+  </div>
+  <small id="depto-msg" class="field-msg"></small>
+
+  <fieldset class="entrega">
+    <legend>{{ t('legend.delivery') }}</legend>
+    <label class="inline">
+      <input type="radio" name="entrega_tipo" value="agencia"
+             {{ 'checked' if not pre or pre.entrega_tipo == 'agencia' }}> {{ t('delivery.agency') }}
+    </label>
+    <label class="inline">
+      <input type="radio" name="entrega_tipo" value="direccion"
+             {{ 'checked' if pre and pre.entrega_tipo == 'direccion' }}> {{ t('delivery.home') }}
+    </label>
+    <label id="detalle-label">{{ t('field.agency_or_address') }}
+      <input id="entrega_detalle" name="entrega_detalle"
+             value="{{ pre.entrega_detalle if pre else '' }}"
+             placeholder="{{ t('field.agency_or_address_ph') }}" autocomplete="off">
+      <datalist id="agencias">
+        {% for a in agencies %}<option value="{{ a }}">{% endfor %}
+      </datalist>
+    </label>
+  </fieldset>
+
+  <label class="checkbox">
+    <input type="checkbox" name="agendar">
+    <span>{{ t('check.save_recipient') }}</span>
+  </label>
+
+  <label>{{ t('field.contents') }}
+    <input name="contenido" value="{{ pre.contenido if pre else '' }}">
+  </label>
+
+  <label class="checkbox big">
+    <input type="checkbox" name="paga_destino" {{ 'checked' if pre and pre.paga_destino }}>
+    <span>{{ t('check.pays_dest') }}</span>
+  </label>
+
+  <fieldset class="opciones">
+    <legend>{{ t('legend.label_options') }}</legend>
+    <label class="checkbox">
+      <input type="checkbox" name="incluir_qr" {{ 'checked' if pre and pre.incluir_qr }}>
+      <span>{{ t('check.print_qr') }}</span>
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" name="incluir_firma" {{ 'checked' if pre and pre.incluir_firma }}>
+      <span>{{ t('check.print_signature') }}</span>
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" name="gris" {{ 'checked' if pre and pre.gris }}>
+      <span>{{ t('check.grayscale') }}</span>
+    </label>
+  </fieldset>
+
+  <div class="botones-envio">
+    <button type="submit" name="salida" value="impresora" class="primary">{{ t('btn.print') }}</button>
+    <button type="submit" name="salida" value="pdf" class="btn">{{ t('btn.pdf_only') }}</button>
+  </div>
+</form>
+
+{% if recientes %}
+<h2>{{ t('heading.recent') }}</h2>
+<ul class="lista">
+  {% for e in recientes %}
+  <li>
+    <a href="{{ url_for('detalle', envio_id=e.id) }}">
+      <span class="num">{{ t('pdf.number') }} {{ '%05d' % e.id }}</span>
+      <span class="nombre">{{ e.dest_nombre }}</span>
+      <span class="meta">{% if e.dest_localidad %}{{ e.dest_localidad }} ({{ e.dest_departamento }}){% else %}{{ e.dest_departamento }}{% endif %} · {{ fmt_dt(e.created_at) }}</span>
+      {% if e.paga_destino %}<span class="tag">{{ t('check.pays_dest') }}</span>{% endif %}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<script>
+  const I18N = {
+    willPrintAs: {{ t('js.will_print_as')|tojson }},
+    phone: {{ t('pdf.phone_inline')|tojson }},
+    sameOrigin: {{ t('js.same_origin_warn')|tojson }},
+    idValid: {{ t('js.id_valid')|tojson }},
+    idInvalid: {{ t('js.id_invalid')|tojson }},
+    fromAgenda: {{ t('js.from_agenda')|tojson }},
+    agencyPh: {{ t('js.agency_ph')|tojson }},
+    addressPh: {{ t('js.address_ph')|tojson }},
+  };
+  const ORIGIN = {{ (s.origin_region or '')|tojson }};
+  const ID_VALIDATION = {{ s.id_validation|tojson }};
+
+  // --- Remitente: preview en vivo (con logo) ---
+  const remSel = document.getElementById('remitente_id');
+  const remPreviewText = document.getElementById('rem-preview-text');
+  const remLogo = document.getElementById('rem-logo');
+  function syncRemitente() {
+    if (!remSel) return;
+    const opt = remSel.options[remSel.selectedIndex];
+    if (!opt) return;
+    const n = opt.dataset.nombre || '';
+    const c = opt.dataset.cel || '';
+    const loc = opt.dataset.loc || '';
+    const logo = opt.dataset.logo || '';
+    const partes = [n, c ? `${I18N.phone} ${c}` : '', loc].filter(Boolean);
+    remPreviewText.textContent = `${I18N.willPrintAs} ${partes.join(' · ')}`;
+    if (logo) { remLogo.src = logo; remLogo.hidden = false; }
+    else { remLogo.hidden = true; }
+  }
+  if (remSel) { remSel.addEventListener('change', syncRemitente); syncRemitente(); }
+
+  // --- Placeholder del detalle según el tipo de entrega ---
+  const lbl = document.getElementById('detalle-label').querySelector('input');
+  function syncEntrega() {
+    const tipo = document.querySelector('input[name=entrega_tipo]:checked').value;
+    if (tipo === 'agencia') { lbl.placeholder = I18N.agencyPh; lbl.setAttribute('list', 'agencias'); }
+    else { lbl.placeholder = I18N.addressPh; lbl.removeAttribute('list'); }
+  }
+  document.querySelectorAll('input[name=entrega_tipo]').forEach(r =>
+    r.addEventListener('change', syncEntrega));
+  syncEntrega();
+
+  // --- Guard de origen (opcional): no enviar al mismo origen que el remitente ---
+  const deptoSel = document.getElementById('dest_departamento');
+  const deptoMsg = document.getElementById('depto-msg');
+  const botonesEnvio = document.querySelectorAll('.botones-envio button');
+  function syncDepto() {
+    const choca = ORIGIN && (deptoSel.value || '').trim().toLowerCase() === ORIGIN.toLowerCase();
+    if (choca) {
+      deptoMsg.textContent = I18N.sameOrigin.replace('{region}', ORIGIN);
+      deptoMsg.className = 'field-msg warn';
+    } else {
+      deptoMsg.textContent = ''; deptoMsg.className = 'field-msg';
+    }
+    botonesEnvio.forEach(b => { b.disabled = !!choca; });
+  }
+  deptoSel.addEventListener('change', syncDepto);
+  syncDepto();
+
+  // --- Validación de documento (pluggable; hoy: cédula uruguaya, no bloqueante) ---
+  function digitos(s) { return (s || '').replace(/\D/g, ''); }
+  function idValida(s) {
+    if (ID_VALIDATION === 'uy_ci') {
+      const d = digitos(s);
+      if (d.length < 7 || d.length > 8) return null;
+      const cuerpo = d.slice(0, -1).padStart(7, '0');
+      const verif = parseInt(d.slice(-1), 10);
+      const pesos = [2, 9, 8, 7, 6, 3, 4];
+      let suma = 0;
+      for (let i = 0; i < 7; i++) suma += parseInt(cuerpo[i], 10) * pesos[i];
+      return ((10 - (suma % 10)) % 10) === verif;
+    }
+    return null;  // sin validación configurada
+  }
+  const ciInput = document.getElementById('dest_cedula');
+  const ciMsg = document.getElementById('ci-msg');
+  function validarCI() {
+    const v = ciInput.value.trim();
+    const r = v ? idValida(v) : null;
+    if (r === null) { ciMsg.textContent = ''; ciMsg.className = 'field-msg'; }
+    else if (r) { ciMsg.textContent = I18N.idValid; ciMsg.className = 'field-msg ok'; }
+    else { ciMsg.textContent = I18N.idInvalid; ciMsg.className = 'field-msg warn'; }
+  }
+  ciInput.addEventListener('input', validarCI);
+
+  // --- Autocompletar por cédula o celular (agenda o envíos previos) ---
+  const celInput = document.getElementById('dest_celular');
+  const hint = document.getElementById('autocomplete-hint');
+  function setRadio(tipo) {
+    const r = document.querySelector(`input[name=entrega_tipo][value="${tipo}"]`);
+    if (r) { r.checked = true; syncEntrega(); }
+  }
+  async function autocompletar() {
+    validarCI();
+    const ced = digitos(ciInput.value);
+    const cel = digitos(celInput.value);
+    hint.hidden = true;
+    if (ced.length < 6 && cel.length < 6) return;
+    const params = new URLSearchParams();
+    if (ced) params.set('cedula', ciInput.value);
+    if (cel) params.set('celular', celInput.value);
+    try {
+      const resp = await fetch('/api/destinatario?' + params.toString());
+      const d = await resp.json();
+      if (!d.found) return;
+      const fields = {
+        dest_nombre: d.dest_nombre, dest_cedula: d.dest_cedula,
+        dest_celular: d.dest_celular, dest_localidad: d.dest_localidad,
+        dest_email: d.dest_email, entrega_detalle: d.entrega_detalle,
+      };
+      let lleno = false;
+      for (const [id, val] of Object.entries(fields)) {
+        const el = document.getElementById(id);
+        if (el && !el.value && val) { el.value = val; lleno = true; }
+      }
+      const dep = document.getElementById('dest_departamento');
+      if (dep && !dep.value && d.dest_departamento) { dep.value = d.dest_departamento; lleno = true; syncDepto(); }
+      if (d.entrega_tipo) setRadio(d.entrega_tipo);
+      validarCI();
+      if (lleno) { hint.textContent = I18N.fromAgenda; hint.hidden = false; }
+    } catch (e) { /* sin red: ignorar */ }
+  }
+  ciInput.addEventListener('change', autocompletar);
+  celInput.addEventListener('change', autocompletar);
+  validarCI();
+</script>
+{% endblock %}

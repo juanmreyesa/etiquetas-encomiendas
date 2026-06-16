@@ -1,0 +1,27 @@
+services:
+  app:
+    build: .
+    container_name: etiquetas
+    restart: unless-stopped
+    # Corre con tu uid/gid para que la base en ./data quede legible/respaldable
+    # sin sudo. Ajustá a tu usuario (mirá con `id -u`/`id -g`). El socket de CUPS
+    # es world-writable, así que `lp` funciona igual.
+    user: "1000:1000"
+    ports:
+      - "8088:8000"
+    volumes:
+      - ./data:/data
+      # Directorio del CUPS del host (NO el archivo de socket): sobrevive a
+      # reinicios de cupsd, que recrean el socket con inode nuevo. Montar el
+      # archivo dejaba el contenedor apuntando a un socket muerto → `lp` decía
+      # "the printer does not exist".
+      - /run/cups:/run/cups
+    environment:
+      ETIQUETAS_DB: /data/etiquetas.db
+      # Defaults del primer arranque; después editá todo desde /admin.
+      PRINTER: Epson_L3210
+      BASE_URL: http://localhost:8088
+      SECRET_KEY: change-me-please
+      HOME: /tmp          # el uid puede no tener entrada en /etc/passwd del contenedor
+      # Fallback si el socket de CUPS fallara: imprimir por IPP a otro host
+      # CUPS_SERVER: 192.168.1.10

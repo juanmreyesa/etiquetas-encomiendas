@@ -1,0 +1,25 @@
+# Datos en runtime (base SQLite con PII + fotos de tickets) — NUNCA subir
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.venv-test/
+venv/
+.pytest_cache/
+
+# Backups / temporales
+*.bak
+*.orig
+*.swp
+*~
+
+# Entorno / secretos
+.env
+.env.*
+!.env.example
+
+# SO
+.DS_Store

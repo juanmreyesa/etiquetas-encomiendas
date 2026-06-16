@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.admin') }}{% endblock %}
+{% block content %}
+<h1>{{ t('page.settings') }}</h1>
+
+<form method="post" action="{{ url_for('admin_guardar') }}" class="card" enctype="multipart/form-data">
+
+  <h2>{{ t('settings.brand') }}</h2>
+  <div class="row">
+    <label>{{ t('field.brand_name') }}
+      <input name="brand_name" value="{{ s.brand_name }}">
+    </label>
+    <label>{{ t('field.language') }}
+      <select name="language">
+        {% for code, name in languages %}
+          <option value="{{ code }}" {{ 'selected' if s.language == code }}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <label>{{ t('field.brand_logo') }}
+    <input type="file" name="logo" accept="image/*">
+  </label>
+  {% if s.logo %}
+  <div class="rem-preview">
+    <img class="rem-logo" src="{{ url_for('brand_logo') }}" alt="">
+    <label class="checkbox"><input type="checkbox" name="quitar_logo">
+      <span>{{ t('check.remove_logo') }}</span></label>
+  </div>
+  {% endif %}
+
+  <h2>{{ t('settings.colors') }}</h2>
+  <div class="row">
+    <label>{{ t('field.color_primary') }}
+      <input type="color" name="color_primary" value="{{ s.color_primary }}">
+    </label>
+    <label>{{ t('field.color_primary_deep') }}
+      <input type="color" name="color_primary_deep" value="{{ s.color_primary_deep }}">
+    </label>
+    <label>{{ t('field.color_accent') }}
+      <input type="color" name="color_accent" value="{{ s.color_accent }}">
+    </label>
+  </div>
+
+  <h2>{{ t('settings.region') }}</h2>
+  <div class="row">
+    <label>{{ t('field.timezone') }}
+      <input name="timezone_offset" value="{{ s.timezone_offset }}">
+    </label>
+    <label>{{ t('field.origin_region') }}
+      <input name="origin_region" value="{{ s.origin_region }}">
+    </label>
+  </div>
+  <label>{{ t('field.id_validation') }}
+    <select name="id_validation">
+      <option value="uy_ci" {{ 'selected' if s.id_validation == 'uy_ci' }}>{{ t('opt.id_uy_ci') }}</option>
+      <option value="none" {{ 'selected' if s.id_validation == 'none' }}>{{ t('opt.id_none') }}</option>
+    </select>
+  </label>
+  <div class="row">
+    <label>{{ t('field.regions') }}
+      <textarea name="regions" rows="8">{% for x in regions %}{{ x }}
+{% endfor %}</textarea>
+    </label>
+    <label>{{ t('field.agencies') }}
+      <textarea name="agencies" rows="8">{% for x in agencies %}{{ x }}
+{% endfor %}</textarea>
+    </label>
+  </div>
+
+  <h2>{{ t('settings.printing') }}</h2>
+  <div class="row">
+    <label>{{ t('field.printer') }}
+      <input name="printer" value="{{ s.printer }}">
+    </label>
+    <label>{{ t('field.base_url') }}
+      <input name="base_url" value="{{ s.base_url }}">
+    </label>
+  </div>
+
+  <h2>{{ t('settings.email') }}</h2>
+  <label class="checkbox">
+    <input type="checkbox" name="smtp_enabled" {{ 'checked' if s.smtp_enabled == '1' }}>
+    <span>{{ t('check.smtp_enabled') }}</span>
+  </label>
+  <div class="row">
+    <label>{{ t('field.smtp_host') }}
+      <input name="smtp_host" value="{{ s.smtp_host }}">
+    </label>
+    <label>{{ t('field.smtp_port') }}
+      <input name="smtp_port" inputmode="numeric" value="{{ s.smtp_port }}">
+    </label>
+  </div>
+  <label>{{ t('field.smtp_security') }}
+    <select name="smtp_security">
+      <option value="starttls" {{ 'selected' if s.smtp_security == 'starttls' }}>{{ t('opt.sec_starttls') }}</option>
+      <option value="ssl" {{ 'selected' if s.smtp_security == 'ssl' }}>{{ t('opt.sec_ssl') }}</option>
+      <option value="none" {{ 'selected' if s.smtp_security == 'none' }}>{{ t('opt.sec_none') }}</option>
+    </select>
+  </label>
+  <div class="row">
+    <label>{{ t('field.smtp_user') }}
+      <input name="smtp_user" value="{{ s.smtp_user }}" autocomplete="off">
+    </label>
+    <label>{{ t('field.smtp_password') }}
+      <input name="smtp_password" type="password" value="" autocomplete="new-password"
+             placeholder="••••••••">
+    </label>
+  </div>
+  <label>{{ t('field.smtp_from') }}
+    <input name="smtp_from" value="{{ s.smtp_from }}">
+  </label>
+  <label class="checkbox">
+    <input type="checkbox" name="notify_on_print" {{ 'checked' if s.notify_on_print == '1' }}>
+    <span>{{ t('check.notify_on_print') }}</span>
+  </label>
+  <label class="checkbox">
+    <input type="checkbox" name="notify_on_dispatch" {{ 'checked' if s.notify_on_dispatch == '1' }}>
+    <span>{{ t('check.notify_on_dispatch') }}</span>
+  </label>
+
+  <button type="submit" class="primary">{{ t('btn.save_settings') }}</button>
+</form>
+
+<form method="post" action="{{ url_for('admin_test_email') }}" class="test-email">
+  <button type="submit" class="btn">{{ t('btn.test_email') }}</button>
+</form>
+{% endblock %}

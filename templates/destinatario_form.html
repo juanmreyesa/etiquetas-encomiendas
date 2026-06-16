@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ t('page.edit_recipient') if d else t('page.new_recipient') }}{% endblock %}
+{% block content %}
+<h1>{{ t('page.edit_recipient') if d else t('page.new_recipient') }}</h1>
+
+<form method="post" action="{{ action }}" class="card">
+  <label>{{ t('field.name') }} *
+    <input name="nombre" required autofocus value="{{ d.nombre if d else '' }}">
+  </label>
+
+  <div class="row">
+    <label>{{ t('field.id_number') }}
+      <input name="cedula" inputmode="numeric" value="{{ d.cedula if d else '' }}">
+    </label>
+    <label>{{ t('field.phone') }}
+      <input name="celular" inputmode="tel" value="{{ d.celular if d else '' }}">
+    </label>
+  </div>
+
+  <label>{{ t('field.email') }}
+    <input name="email" type="email" value="{{ d.email if d else '' }}">
+  </label>
+
+  <div class="row">
+    <label>{{ t('field.region') }}
+      <select name="departamento">
+        <option value="">{{ t('select.choose') }}</option>
+        {% for dep in regions %}
+          <option value="{{ dep }}" {{ 'selected' if d and d.departamento == dep }}>{{ dep }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>{{ t('field.locality') }}
+      <input name="localidad" value="{{ d.localidad if d else '' }}"
+             placeholder="{{ t('field.locality_ph') }}">
+    </label>
+  </div>
+
+  <fieldset class="entrega">
+    <legend>{{ t('legend.usual_delivery') }}</legend>
+    <label class="inline">
+      <input type="radio" name="entrega_tipo" value="agencia"
+             {{ 'checked' if not d or d.entrega_tipo != 'direccion' }}> {{ t('delivery.agency') }}
+    </label>
+    <label class="inline">
+      <input type="radio" name="entrega_tipo" value="direccion"
+             {{ 'checked' if d and d.entrega_tipo == 'direccion' }}> {{ t('delivery.home') }}
+    </label>
+    <label>{{ t('field.agency_or_address') }}
+      <input name="entrega_detalle" list="agencias" autocomplete="off"
+             value="{{ d.entrega_detalle if d else '' }}">
+      <datalist id="agencias">
+        {% for a in agencies %}<option value="{{ a }}">{% endfor %}
+      </datalist>
+    </label>
+  </fieldset>
+
+  <button type="submit" class="primary">{{ t('btn.save') }}</button>
+  <a class="btn" href="{{ url_for('destinatarios') }}">{{ t('btn.cancel') }}</a>
+</form>
+{% endblock %}

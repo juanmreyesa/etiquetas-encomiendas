@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.senders') }}{% endblock %}
+{% block content %}
+<h1>{{ t('nav.senders') }}</h1>
+
+<p class="export-bar">
+  <a class="btn primary" href="{{ url_for('remitente_nuevo') }}">{{ t('page.new_sender') }}</a>
+</p>
+
+{% if remitentes %}
+<ul class="lista">
+  {% for r in remitentes %}
+  <li class="agenda-item">
+    <div class="ag-info">
+      <span class="nombre">
+        {% if r.logo %}<img class="rem-logo-sm" src="{{ url_for('remitente_logo', rem_id=r.id) }}" alt="">{% endif %}
+        {{ r.nombre }}{% if r.es_default %} <span class="tag ok">★</span>{% endif %}
+      </span>
+      <span class="meta">
+        {% if r.celular %}{{ r.celular }}{% endif %}
+        {% if r.localidad %} · {{ r.localidad }}{% endif %}
+      </span>
+    </div>
+    <div class="ag-acciones">
+      <a class="btn" href="{{ url_for('remitente_editar', rem_id=r.id) }}">{{ t('btn.edit') }}</a>
+      <form method="post" action="{{ url_for('remitente_eliminar', rem_id=r.id) }}"
+            onsubmit="return confirm('{{ t('confirm.delete_recipient') }}')">
+        <button class="btn danger" type="submit">{{ t('btn.delete') }}</button>
+      </form>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="vacio">{{ t('form.no_senders') }}</p>
+{% endif %}
+{% endblock %}
