@@ -34,6 +34,24 @@
     <span>{{ t('check.is_default') }}</span>
   </label>
 
+  <fieldset>
+    <legend>{{ t('settings.sender_email') }}</legend>
+    <p class="meta">{{ t('help.sender_email') }}</p>
+    <label>{{ t('field.smtp_from') }}
+      <input name="email_from" value="{{ r.email_from if r else '' }}"
+             placeholder="Encomiendas &lt;encomiendas@dominio&gt;">
+    </label>
+    <div class="row">
+      <label>{{ t('field.smtp_user') }}
+        <input name="smtp_user" value="{{ r.smtp_user if r else '' }}" autocomplete="off">
+      </label>
+      <label>{{ t('field.smtp_password') }}
+        <input name="smtp_password" type="password" value="" autocomplete="new-password"
+               placeholder="{{ '••••••••' if r and r.smtp_password else '' }}">
+      </label>
+    </div>
+  </fieldset>
+
   <button type="submit" class="primary">{{ t('btn.save') }}</button>
   <a class="btn" href="{{ url_for('remitentes') }}">{{ t('btn.cancel') }}</a>
 </form>

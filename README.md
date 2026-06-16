@@ -1,5 +1,12 @@
 # Etiquetas de Encomiendas · Parcel Labels
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3-000?logo=flask&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
+![i18n](https://img.shields.io/badge/i18n-es%20%C2%B7%20en-127C66)
+![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
+
 [Español](#español) · [English](#english)
 
 Self-hosted web app to create and print **parcel/shipping labels** (A4 PDF) from
@@ -10,6 +17,37 @@ SMTP) is configured from an **admin screen** — no code editing.
 
 Bilingual **es/en**. Ships with a Uruguay preset (departments, courier agencies,
 national-ID check digit) that you can edit or replace.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/img/nuevo-envio.png" width="380" alt="New shipment form"><br>
+      <sub>Nuevo envío · <i>New shipment</i></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/img/configuracion.png" width="380" alt="Settings / admin"><br>
+      <sub>Configuración · <i>Settings</i></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/img/detalle.png" width="380" alt="Shipment detail and dispatch"><br>
+      <sub>Detalle + despacho · <i>Detail + dispatch</i></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/img/historico.png" width="380" alt="History list"><br>
+      <sub>Histórico · <i>History</i></sub>
+    </td>
+  </tr>
+</table>
+
+<details>
+<summary>🌙 Modo oscuro · <i>Dark mode</i></summary>
+
+<img src="docs/img/nuevo-envio-dark.png" width="380" alt="New shipment in dark mode">
+</details>
 
 ---
 

@@ -18,16 +18,23 @@ def _remitente():
     return (db.get_setting("smtp_from") or db.get_setting("smtp_user") or "").strip()
 
 
-def enviar(destino, asunto, cuerpo, adjunto_path=None, adjunto_nombre=None):
-    """Envía un email de texto plano con adjunto opcional. (ok, mensaje)."""
+def enviar(destino, asunto, cuerpo, adjunto_path=None, adjunto_nombre=None,
+           from_addr=None, user=None, password=None):
+    """Envía un email de texto plano con adjunto opcional. (ok, mensaje).
+
+    El host/puerto/seguridad salen del SMTP global; `from_addr`/`user`/`password`
+    permiten enviar desde una cuenta distinta (p.ej. la propia de un remitente)."""
     destino = (destino or "").strip()
     if not destino:
         return False, "sin destinatario"
     if not db.get_setting("smtp_host"):
         return False, "SMTP no configurado"
 
+    user = user or db.get_setting("smtp_user")
+    pw = password if password is not None else db.get_setting("smtp_password")
+
     msg = EmailMessage()
-    msg["From"] = _remitente() or db.get_setting("smtp_user")
+    msg["From"] = (from_addr or "").strip() or _remitente() or user
     msg["To"] = destino
     msg["Subject"] = asunto
     msg.set_content(cuerpo)
@@ -43,8 +50,6 @@ def enviar(destino, asunto, cuerpo, adjunto_path=None, adjunto_nombre=None):
 
     host = db.get_setting("smtp_host")
     port = int(db.get_setting("smtp_port") or 587)
-    user = db.get_setting("smtp_user")
-    pw = db.get_setting("smtp_password")
     seguridad = (db.get_setting("smtp_security") or "starttls").lower()
 
     try:

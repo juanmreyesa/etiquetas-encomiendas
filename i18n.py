@@ -159,6 +159,8 @@ TRANSLATIONS = {
         "field.current_logo": "Logo actual",
         "check.remove_logo": "Quitar el logo",
         "check.is_default": "Usar como remitente por defecto",
+        "settings.sender_email": "Email saliente propio (opcional)",
+        "help.sender_email": "Si lo completás, las notificaciones de envíos con este remitente salen desde esta cuenta (con el servidor SMTP global). Si lo dejás vacío, usa la cuenta global.",
 
         # --- admin / configuración ---
         "page.settings": "Configuración",
@@ -389,6 +391,8 @@ TRANSLATIONS = {
         "field.current_logo": "Current logo",
         "check.remove_logo": "Remove the logo",
         "check.is_default": "Use as default sender",
+        "settings.sender_email": "Own outgoing email (optional)",
+        "help.sender_email": "If set, notifications for shipments with this sender are sent from this account (using the global SMTP server). If empty, the global account is used.",
 
         "page.settings": "Settings",
         "settings.brand": "Brand",

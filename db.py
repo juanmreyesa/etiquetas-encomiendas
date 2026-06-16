@@ -99,13 +99,18 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 CREATE TABLE IF NOT EXISTS remitentes (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    created_at TEXT NOT NULL,
-    nombre     TEXT NOT NULL,
-    celular    TEXT,
-    localidad  TEXT,            -- localidad de origen (ej. Montevideo)
-    logo       TEXT,            -- nombre de archivo en data/logos (o NULL)
-    es_default INTEGER NOT NULL DEFAULT 0
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    created_at    TEXT NOT NULL,
+    nombre        TEXT NOT NULL,
+    celular       TEXT,
+    localidad     TEXT,            -- localidad de origen (ej. Montevideo)
+    logo          TEXT,            -- nombre de archivo en data/logos (o NULL)
+    es_default    INTEGER NOT NULL DEFAULT 0,
+    -- email saliente propio (opcional): si está, las notificaciones de envíos con
+    -- este remitente se mandan desde esta cuenta; si no, usa el SMTP global.
+    email_from    TEXT,            -- ej. "Encomiendas <encomiendas@dominio>"
+    smtp_user     TEXT,            -- usuario SMTP propio (auth)
+    smtp_password TEXT             -- contraseña SMTP propia
 );
 """
 
@@ -115,6 +120,7 @@ _COLUMNAS_EXTRA = [
     ("rem_celular", "TEXT"),
     ("rem_localidad", "TEXT"),   # localidad de origen del remitente
     ("rem_logo", "TEXT"),        # logo del remitente al momento del envío
+    ("rem_id", "INTEGER"),       # FK lógica al remitente (para resolver su email)
     ("incluir_qr", "INTEGER NOT NULL DEFAULT 1"),
     ("incluir_firma", "INTEGER NOT NULL DEFAULT 1"),
     ("gris", "INTEGER NOT NULL DEFAULT 0"),
@@ -128,6 +134,13 @@ _COLUMNAS_EXTRA = [
 _COLUMNAS_EXTRA_DEST = [
     ("localidad", "TEXT"),
     ("email", "TEXT"),
+]
+
+# Columnas agregadas a remitentes después del esquema inicial (idempotente)
+_COLUMNAS_EXTRA_REM = [
+    ("email_from", "TEXT"),
+    ("smtp_user", "TEXT"),
+    ("smtp_password", "TEXT"),
 ]
 
 
@@ -188,6 +201,10 @@ def init_db():
         for col, ddl in _COLUMNAS_EXTRA_DEST:
             if col not in cols_d:
                 conn.execute(f"ALTER TABLE destinatarios ADD COLUMN {col} {ddl}")
+        cols_r = {r["name"] for r in conn.execute("PRAGMA table_info(remitentes)")}
+        for col, ddl in _COLUMNAS_EXTRA_REM:
+            if col not in cols_r:
+                conn.execute(f"ALTER TABLE remitentes ADD COLUMN {col} {ddl}")
         # Seed idempotente de settings: solo inserta claves que falten (no pisa
         # ediciones del usuario ni datos viejos).
         for key, val in _DEFAULT_SETTINGS.items():
@@ -200,15 +217,15 @@ def crear_envio(data):
     with get_conn() as conn:
         cur = conn.execute(
             """INSERT INTO envios
-               (created_at, rem_nombre, rem_celular, rem_localidad, rem_logo,
+               (created_at, rem_nombre, rem_celular, rem_localidad, rem_logo, rem_id,
                 dest_nombre, dest_cedula, dest_celular, dest_departamento,
                 dest_localidad, dest_email, entrega_tipo, entrega_detalle,
                 paga_destino, contenido, notas, incluir_qr, incluir_firma, gris)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 now_iso(),
                 data.get("rem_nombre"), data.get("rem_celular"),
-                data.get("rem_localidad"), data.get("rem_logo"),
+                data.get("rem_localidad"), data.get("rem_logo"), data.get("rem_id"),
                 data["dest_nombre"], data["dest_cedula"], data["dest_celular"],
                 data["dest_departamento"], data.get("dest_localidad"),
                 data.get("dest_email"),
@@ -491,29 +508,29 @@ def get_agencies():
 def crear_remitente(r):
     with get_conn() as conn:
         cur = conn.execute(
-            "INSERT INTO remitentes (created_at, nombre, celular, localidad, logo, es_default) "
-            "VALUES (?,?,?,?,?,?)",
+            "INSERT INTO remitentes (created_at, nombre, celular, localidad, logo, "
+            "es_default, email_from, smtp_user, smtp_password) VALUES (?,?,?,?,?,?,?,?,?)",
             (now_iso(), r["nombre"], r.get("celular"), r.get("localidad"),
-             r.get("logo"), int(r.get("es_default") or 0)),
+             r.get("logo"), int(r.get("es_default") or 0),
+             r.get("email_from"), r.get("smtp_user"), r.get("smtp_password")),
         )
         return cur.lastrowid
 
 
 def actualizar_remitente(rem_id, r):
+    # Campos siempre escritos + campos preserve-on-None (logo, smtp_password):
+    # None = no tocar; "" = borrar; valor = setear.
+    sets = ["nombre=?", "celular=?", "localidad=?", "es_default=?", "email_from=?",
+            "smtp_user=?"]
+    params = [r["nombre"], r.get("celular"), r.get("localidad"),
+              int(r.get("es_default") or 0), r.get("email_from"), r.get("smtp_user")]
+    for col in ("logo", "smtp_password"):
+        if r.get(col) is not None:
+            sets.append(f"{col}=?")
+            params.append(r[col])
+    params.append(rem_id)
     with get_conn() as conn:
-        # logo=None => no se toca (no se subió uno nuevo); "" => se borra
-        if r.get("logo") is None:
-            conn.execute(
-                "UPDATE remitentes SET nombre=?, celular=?, localidad=?, es_default=? WHERE id=?",
-                (r["nombre"], r.get("celular"), r.get("localidad"),
-                 int(r.get("es_default") or 0), rem_id),
-            )
-        else:
-            conn.execute(
-                "UPDATE remitentes SET nombre=?, celular=?, localidad=?, logo=?, es_default=? WHERE id=?",
-                (r["nombre"], r.get("celular"), r.get("localidad"), r["logo"],
-                 int(r.get("es_default") or 0), rem_id),
-            )
+        conn.execute(f"UPDATE remitentes SET {', '.join(sets)} WHERE id=?", params)
 
 
 def get_remitente(rem_id):

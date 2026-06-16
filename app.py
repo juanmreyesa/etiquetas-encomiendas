@@ -191,7 +191,15 @@ def _notificar(envio, evento):
             p = os.path.join(TICKETS_DIR, os.path.basename(foto))
             if os.path.exists(p):
                 adj, adjn = p, foto
-    ok, msg = mailer.enviar(to, subj, body, adjunto_path=adj, adjunto_nombre=adjn)
+    # Cuenta de envío: si el remitente del envío tiene su propio email, se usa
+    # esa cuenta (from + auth); si no, el SMTP global.
+    rem = db.get_remitente(envio["rem_id"]) if envio.get("rem_id") else None
+    from_addr = rem.get("email_from") if rem else None
+    smtp_user = rem.get("smtp_user") if rem else None
+    smtp_pw = rem.get("smtp_password") if rem else None
+    ok, msg = mailer.enviar(to, subj, body, adjunto_path=adj, adjunto_nombre=adjn,
+                            from_addr=from_addr, user=smtp_user or None,
+                            password=smtp_pw if smtp_user else None)
     flash(tr("flash.email_sent") if ok else tr("flash.email_failed", msg=msg),
           "ok" if ok else "error")
 
@@ -204,9 +212,11 @@ def resolver_remitente(form):
     if not rem:
         rem = db.remitente_default()
     if not rem:
-        return {"rem_nombre": "", "rem_celular": "", "rem_localidad": "", "rem_logo": None}
+        return {"rem_nombre": "", "rem_celular": "", "rem_localidad": "",
+                "rem_logo": None, "rem_id": None}
     return {"rem_nombre": rem["nombre"], "rem_celular": rem["celular"],
-            "rem_localidad": rem["localidad"], "rem_logo": rem["logo"]}
+            "rem_localidad": rem["localidad"], "rem_logo": rem["logo"],
+            "rem_id": rem["id"]}
 
 
 @app.errorhandler(413)
@@ -531,6 +541,8 @@ def _rem_form_base():
         "celular": db.norm_tel(request.form.get("celular")),
         "localidad": (request.form.get("localidad") or "").strip(),
         "es_default": 1 if request.form.get("es_default") else 0,
+        "email_from": (request.form.get("email_from") or "").strip(),
+        "smtp_user": (request.form.get("smtp_user") or "").strip(),
     }
 
 
@@ -541,6 +553,7 @@ def remitente_crear():
         flash(tr("flash.name_required_generic"), "error")
         return redirect(url_for("remitente_nuevo"))
     base["logo"] = None
+    base["smtp_password"] = request.form.get("smtp_password") or None
     rem_id = db.crear_remitente(base)
     ok, val = _guardar_logo(request.files.get("logo"), f"sender_{rem_id}")
     if ok and val:
@@ -576,6 +589,8 @@ def remitente_actualizar(rem_id):
         base["logo"] = val         # nuevo logo
     else:
         base["logo"] = None        # sin cambios
+    # contraseña SMTP del remitente: vacío = no tocar; texto = setear
+    base["smtp_password"] = request.form.get("smtp_password") or None
     db.actualizar_remitente(rem_id, base)
     flash(tr("flash.sender_updated"), "ok")
     return redirect(url_for("remitentes"))

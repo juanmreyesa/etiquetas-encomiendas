@@ -124,6 +124,41 @@ def test_borrar_remitente_quita_logo(client, tmp_path):
     assert not _os.path.exists(path)
 
 
+def test_email_usa_cuenta_del_remitente(client, monkeypatch):
+    cap = {}
+    monkeypatch.setattr(appmod.mailer, "enviar",
+                        lambda *a, **k: (cap.update(k), (True, "ok"))[1])
+    db.set_settings({"smtp_enabled": "1", "smtp_host": "h", "smtp_user": "global@x.com",
+                     "smtp_from": "Global <global@x.com>", "notify_on_print": "1"})
+    rid = db.crear_remitente({"nombre": "Eryops", "celular": "099", "localidad": "MVD",
+                              "logo": None, "es_default": 0,
+                              "email_from": "Enc <enc@eryops.uy>",
+                              "smtp_user": "enc@eryops.uy", "smtp_password": "secret"})
+    client.post("/envios", data={"remitente_id": str(rid), "dest_nombre": "Ana",
+                "dest_email": "ana@x.com", "dest_departamento": "Salto",
+                "entrega_tipo": "agencia", "salida": "impresora"},
+                content_type="multipart/form-data", follow_redirects=True)
+    assert cap.get("from_addr") == "Enc <enc@eryops.uy>"
+    assert cap.get("user") == "enc@eryops.uy"
+    assert cap.get("password") == "secret"
+
+
+def test_email_sin_override_usa_global(client, monkeypatch):
+    cap = {}
+    monkeypatch.setattr(appmod.mailer, "enviar",
+                        lambda *a, **k: (cap.update(k), (True, "ok"))[1])
+    db.set_settings({"smtp_enabled": "1", "smtp_host": "h", "smtp_user": "global@x.com",
+                     "notify_on_print": "1"})
+    rid = db.crear_remitente({"nombre": "Simple", "celular": "099", "localidad": "MVD",
+                              "logo": None, "es_default": 0})
+    client.post("/envios", data={"remitente_id": str(rid), "dest_nombre": "Ana",
+                "dest_email": "ana@x.com", "dest_departamento": "Salto",
+                "entrega_tipo": "agencia", "salida": "impresora"},
+                content_type="multipart/form-data", follow_redirects=True)
+    assert not cap.get("from_addr")   # sin override -> mailer cae al global
+    assert not cap.get("user")
+
+
 def test_remitente_crud_via_http(client):
     r = client.post("/admin/remitentes", data={"nombre": "transportes vega",
                     "celular": "099", "localidad": "MVD"},
