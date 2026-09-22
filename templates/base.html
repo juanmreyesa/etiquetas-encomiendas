@@ -15,10 +15,10 @@
       } catch (e) {}
     })();
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {# Tipografía autoalojada (Chivo/Chivo Mono, en static/fonts): sin CDN. #}
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="{{ url_for('static', filename='fonts/chivo-latin.woff2') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=css_v) }}">
   {# Override de la paleta desde la configuración (después del CSS para ganar). #}
   <style>
     :root {

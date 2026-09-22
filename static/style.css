@@ -1,29 +1,48 @@
+/* Tipografía autoalojada: la app no depende de ningún CDN para verse bien. */
+@font-face{
+  font-family:'Chivo'; font-style:normal; font-weight:400 900; font-display:swap;
+  src:url('fonts/chivo-latin.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Chivo Mono'; font-style:normal; font-weight:400 600; font-display:swap;
+  src:url('fonts/chivomono-latin.woff2') format('woff2');
+}
+
+/* Chapa esmaltada: misma materia que el resto de los servicios de la casa.
+   El color de marca (--emerald/--gold) lo fija cada instalación desde la
+   configuración, así que acá sólo se define el valor por defecto. */
 :root {
-  --paper:        #F6F3EC;
-  --surface:      #FFFFFF;
-  --ink:          #1E1A15;
-  --muted:        #6F665A;
-  --line:         #E7E1D5;
+  --paper:        #E3E6E2;
+  --surface:      #F7F8F6;
+  --ink:          #171B1A;
+  --muted:        #5C6663;
+  --line:         #CCD1CB;
   --emerald:      #127C66;
   --emerald-deep: #0E6552;
-  --emerald-soft: #EAF2EE;
+  --emerald-soft: #E7EEEB;
   --gold:         #B5872E;
-  --danger:       #B23A2E;
-  --danger-soft:  #FBEDEA;
-  --ok:           #1F7A52;
+  --danger:       #C33A23;
+  --danger-soft:  #F6E7E3;
+  --ok:           #1C9B4B;
   /* Colores antes hardcodeados, ahora variables (para el modo oscuro) */
-  --header-bg:        rgba(246,243,236,.85);
-  --border-strong:    #cfc8b9;
-  --remitente-border: #D5E6DF;
-  --danger-line:      #EEC8C1;
-  --ok-line:          #CDE5DC;
-  --danger-btn-hover-bg:     #f6ddd8;
-  --danger-btn-hover-border: #e6b5ac;
-  --radius:       14px;
-  --radius-sm:    10px;
-  --shadow:       0 1px 2px rgba(30,26,21,.04), 0 14px 32px -22px rgba(30,26,21,.30);
-  --serif: "Fraunces", Georgia, "Times New Roman", serif;
-  --sans:  "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
+  --header-bg:        rgba(247,248,246,.9);
+  --border-strong:    #b4bab3;
+  --remitente-border: #cfdcd7;
+  --danger-line:      #e6c4bc;
+  --ok-line:          #cbdfd7;
+  --danger-btn-hover-bg:     #f2ddd7;
+  --danger-btn-hover-border: #dcb1a6;
+  --shine:        rgba(255,255,255,.9);
+  --rail:         #b4bab3;
+  --rail-hi:      #d3d8d1;
+  --rail-lo:      #8f958d;
+  --rail-slot:    #7d837b;
+  --radius:       8px;
+  --radius-sm:    6px;
+  --shadow:       0 1px 0 rgba(23,27,26,.05), 0 2px 10px -6px rgba(23,27,26,.35);
+  --serif: "Chivo", "Segoe UI", system-ui, sans-serif;   /* display */
+  --sans:  "Chivo", "Segoe UI", system-ui, sans-serif;
+  --mono:  "Chivo Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 /* ---------------- Modo oscuro ----------------
@@ -32,49 +51,59 @@
    <html>, persistido en localStorage por el toggle del header). */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper:        #17140F;
-    --surface:      #221E18;
-    --ink:          #ECE5D8;
-    --muted:        #9C9082;
-    --line:         #38322A;
+    --paper:        #101413;
+    --surface:      #191E1D;
+    --ink:          #E7EBE8;
+    --muted:        #95A09B;
+    --line:         #2B312F;
     --emerald:      #2FA084;
     --emerald-deep: #57C2A6;
-    --emerald-soft: #1C3630;
+    --emerald-soft: #17302A;
     --gold:         #D2A24C;
-    --danger:       #E2796B;
-    --danger-soft:  #3A201C;
-    --ok:           #62BD8E;
-    --header-bg:        rgba(23,20,15,.85);
-    --border-strong:    #4A4338;
-    --remitente-border: #2C4A41;
-    --danger-line:      #5A332B;
-    --ok-line:          #244A40;
-    --danger-btn-hover-bg:     #4A2620;
-    --danger-btn-hover-border: #6B3A30;
-    --shadow: 0 1px 2px rgba(0,0,0,.45), 0 14px 32px -22px rgba(0,0,0,.75);
+    --danger:       #E2573F;
+    --danger-soft:  #331A15;
+    --ok:           #39B966;
+    --header-bg:        rgba(16,20,19,.88);
+    --border-strong:    #3A423F;
+    --remitente-border: #29453D;
+    --danger-line:      #55291F;
+    --ok-line:          #23453A;
+    --danger-btn-hover-bg:     #42201A;
+    --danger-btn-hover-border: #63332A;
+    --shine:        rgba(255,255,255,.055);
+    --rail:         #3A423F;
+    --rail-hi:      #4B534F;
+    --rail-lo:      #252B29;
+    --rail-slot:    #1B201F;
+    --shadow: 0 1px 0 rgba(0,0,0,.4), 0 6px 18px -12px #000;
   }
 }
 :root[data-theme="dark"] {
-  --paper:        #17140F;
-  --surface:      #221E18;
-  --ink:          #ECE5D8;
-  --muted:        #9C9082;
-  --line:         #38322A;
+  --paper:        #101413;
+  --surface:      #191E1D;
+  --ink:          #E7EBE8;
+  --muted:        #95A09B;
+  --line:         #2B312F;
   --emerald:      #2FA084;
   --emerald-deep: #57C2A6;
-  --emerald-soft: #1C3630;
+  --emerald-soft: #17302A;
   --gold:         #D2A24C;
-  --danger:       #E2796B;
-  --danger-soft:  #3A201C;
-  --ok:           #62BD8E;
-  --header-bg:        rgba(23,20,15,.85);
-  --border-strong:    #4A4338;
-  --remitente-border: #2C4A41;
-  --danger-line:      #5A332B;
-  --ok-line:          #244A40;
-  --danger-btn-hover-bg:     #4A2620;
-  --danger-btn-hover-border: #6B3A30;
-  --shadow: 0 1px 2px rgba(0,0,0,.45), 0 14px 32px -22px rgba(0,0,0,.75);
+  --danger:       #E2573F;
+  --danger-soft:  #331A15;
+  --ok:           #39B966;
+  --header-bg:        rgba(16,20,19,.88);
+  --border-strong:    #3A423F;
+  --remitente-border: #29453D;
+  --danger-line:      #55291F;
+  --ok-line:          #23453A;
+  --danger-btn-hover-bg:     #42201A;
+  --danger-btn-hover-border: #63332A;
+  --shine:        rgba(255,255,255,.055);
+  --rail:         #3A423F;
+  --rail-hi:      #4B534F;
+  --rail-lo:      #252B29;
+  --rail-slot:    #1B201F;
+  --shadow: 0 1px 0 rgba(0,0,0,.4), 0 6px 18px -12px #000;
 }
 
 * { box-sizing: border-box; }
@@ -96,37 +125,56 @@ body {
 
 /* ---------------- Header ---------------- */
 header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 6px 12px;
-  padding: 14px 18px;
+  padding: 13px 18px 13px 22px;
   background: var(--header-bg);
   backdrop-filter: saturate(140%) blur(8px);
   border-bottom: 1px solid var(--line);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  box-shadow: inset 0 1px 0 var(--shine);
+}
+/* barra de tensión: el color de la marca, del lado del canto */
+header::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+  background: linear-gradient(180deg, var(--emerald), var(--emerald-deep));
+}
+/* el header se apoya en un riel, como los módulos de casa.lan */
+header::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -7px; height: 6px;
+  background-image:
+    repeating-linear-gradient(90deg, var(--rail-slot) 0 7px, transparent 7px 19px),
+    linear-gradient(180deg, var(--rail-hi) 0 1px, var(--rail) 1px 4px, var(--rail-lo) 4px 6px);
+  background-size: 100% 2px, 100% 100%;
+  background-position: 0 2px, 0 0;
+  background-repeat: no-repeat;
+  opacity: .55;
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
 .brand-mark {
-  width: 16px; height: 16px; border-radius: 5px;
+  width: 16px; height: 16px; border-radius: 3px;
   background: linear-gradient(150deg, var(--emerald) 35%, var(--emerald-deep));
   box-shadow: inset 0 0 0 2px rgba(255,255,255,.35);
 }
 .brand-name {
   font-family: var(--serif);
-  font-weight: 600;
-  font-size: 20px;
-  letter-spacing: -.01em;
+  font-weight: 900;
+  font-size: 19px;
+  letter-spacing: -.02em;
+  text-transform: uppercase;
   color: var(--ink);
 }
 nav { display: flex; flex-wrap: wrap; gap: 16px; }
 nav a {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: .02em;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
   text-decoration: none;
   color: var(--muted);
   padding: 4px 0;
@@ -138,8 +186,8 @@ nav a:hover { color: var(--ink); border-color: var(--emerald); }
 .brand-logo { width: 24px; height: 24px; border-radius: 6px; object-fit: contain; }
 .header-tools { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .lang-toggle {
-  padding: 5px 10px; font-size: 13px; font-weight: 700; line-height: 1;
-  border-radius: 10px; border: 1px solid var(--line); color: var(--ink);
+  padding: 5px 10px; font-size: 12px; font-weight: 800; letter-spacing: .06em; line-height: 1;
+  border-radius: var(--radius-sm); border: 1px solid var(--line); color: var(--ink);
   text-decoration: none; display: inline-flex; align-items: center;
 }
 .lang-toggle:hover { border-color: var(--border-strong); }
@@ -150,8 +198,8 @@ nav a:hover { color: var(--ink); border-color: var(--emerald); }
 .test-email { margin: 12px 0 0; }
 
 .tema-toggle {
-  width: auto; padding: 5px 10px; font-size: 17px; line-height: 1;
-  border-radius: 10px; background: transparent; border: 1px solid var(--line);
+  width: auto; padding: 5px 10px; font-size: 16px; line-height: 1;
+  border-radius: var(--radius-sm); background: transparent; border: 1px solid var(--line);
   color: var(--ink); flex-shrink: 0;
 }
 .tema-toggle:hover { border-color: var(--border-strong); }
@@ -167,27 +215,30 @@ main {
 
 h1 {
   font-family: var(--serif);
-  font-weight: 500;
-  font-size: 30px;
-  letter-spacing: -.02em;
-  margin: 4px 0 20px;
+  font-weight: 900;
+  font-size: 29px;
+  letter-spacing: -.03em;
+  text-transform: uppercase;
+  line-height: 1.05;
+  margin: 6px 0 20px;
 }
 h2 {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .12em;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .13em;
   text-transform: uppercase;
   color: var(--muted);
-  margin: 20px 0 8px;
+  text-shadow: 0 1px 0 var(--shine);
+  margin: 22px 0 8px;
 }
 
 /* ---------------- Card ---------------- */
 .card {
-  background: var(--surface);
+  background: linear-gradient(var(--surface), color-mix(in srgb, var(--surface) 92%, var(--paper)));
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 20px;
-  box-shadow: var(--shadow);
+  box-shadow: inset 0 1px 0 var(--shine), var(--shadow);
 }
 
 form.card label, fieldset label { display: block; margin-bottom: 16px; }
@@ -209,7 +260,8 @@ select, textarea {
   color: var(--ink);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: var(--surface);
+  background: color-mix(in srgb, var(--paper) 55%, var(--surface));
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.06);
   transition: border-color .15s, box-shadow .15s;
 }
 textarea { resize: vertical; line-height: 1.4; }
@@ -222,7 +274,7 @@ input::placeholder { color: #a9a294; }
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--emerald);
-  box-shadow: 0 0 0 3px var(--emerald-soft);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.06), 0 0 0 3px var(--emerald-soft);
 }
 select {
   appearance: none;
@@ -235,14 +287,14 @@ select {
 /* ---------------- Fieldsets ---------------- */
 fieldset {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 12px 14px;
   margin: 0 0 16px;
 }
 fieldset legend {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .12em;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
   text-transform: uppercase;
   color: var(--muted);
   padding: 0 6px;
@@ -254,6 +306,7 @@ label.inline {
   margin: 0 18px 0 0; font-weight: 500;
 }
 label.inline input { width: auto; margin: 0; }
+input[type=radio], input[type=checkbox] { accent-color: var(--emerald); }
 
 /* Remitente preview + logo */
 .rem-preview {
@@ -296,12 +349,14 @@ label.checkbox input {
 button, .btn {
   display: inline-block;
   font-family: var(--sans);
-  font-size: 15.5px;
-  font-weight: 700;
-  padding: 13px 20px;
-  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--line);
-  background: var(--surface);
+  background: linear-gradient(var(--surface), color-mix(in srgb, var(--surface) 88%, var(--paper)));
+  box-shadow: inset 0 1px 0 var(--shine);
   color: var(--ink);
   cursor: pointer;
   text-decoration: none;
@@ -311,11 +366,13 @@ button, .btn {
 button:hover, .btn:hover { border-color: var(--border-strong); }
 button:active, .btn:active { transform: translateY(1px); }
 button.primary, .btn.primary {
-  background: var(--emerald);
+  background: linear-gradient(color-mix(in srgb, var(--emerald) 88%, #fff), var(--emerald));
   border-color: var(--emerald-deep);
   color: #fff;
   width: 100%;
-  box-shadow: 0 8px 18px -10px rgba(18,124,102,.7);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 8px 18px -12px rgba(0,0,0,.6);
 }
 button.primary:hover, .btn.primary:hover { background: var(--emerald-deep); border-color: var(--emerald-deep); }
 .btn.danger, button.danger {
@@ -343,17 +400,19 @@ ul.lista { list-style: none; padding: 0; margin: 8px 0; }
 ul.lista li { margin-bottom: 9px; }
 ul.lista a {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 12px;
-  background: var(--surface);
+  background: linear-gradient(var(--surface), color-mix(in srgb, var(--surface) 92%, var(--paper)));
+  box-shadow: inset 0 1px 0 var(--shine);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 13px 15px;
   text-decoration: none;
   color: var(--ink);
   transition: border-color .15s, transform .04s;
 }
+ul.lista a.done { box-shadow: inset 4px 0 0 var(--emerald); }
 ul.lista a:hover { border-color: var(--emerald); }
 ul.lista a:active { transform: translateY(1px); }
-.num { font-family: var(--serif); font-weight: 600; color: var(--emerald-deep); font-variant-numeric: tabular-nums; }
+.num { font-family: var(--mono); font-weight: 600; color: var(--emerald-deep); font-variant-numeric: tabular-nums; }
 .nombre { font-weight: 700; }
 .meta { color: var(--muted); font-size: 13.5px; }
 .tag {
@@ -377,10 +436,11 @@ ul.lista a:active { transform: translateY(1px); }
 /* ---------------- Detalle ---------------- */
 .detalle .banner {
   background: var(--ink); color: var(--paper); text-align: center;
-  font-weight: 800; letter-spacing: .1em;
+  font-weight: 800; letter-spacing: .12em; text-transform: uppercase; font-size: 13px;
   padding: 12px; border-radius: var(--radius-sm); margin-bottom: 14px;
 }
-.detalle .grande { font-family: var(--serif); font-size: 27px; font-weight: 500; margin: 4px 0 14px; letter-spacing: -.01em; }
+.detalle .grande { font-family: var(--serif); font-size: 25px; font-weight: 900; text-transform: uppercase;
+  margin: 4px 0 14px; letter-spacing: -.02em; }
 dl { display: grid; grid-template-columns: max-content 1fr; gap: 7px 16px; margin: 0; }
 dt { font-weight: 700; color: var(--muted); font-size: 13px; letter-spacing: .02em; }
 dd { margin: 0; }
@@ -411,9 +471,10 @@ dd { margin: 0; }
 .agenda-item {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
   gap: 10px;
-  background: var(--surface);
+  background: linear-gradient(var(--surface), color-mix(in srgb, var(--surface) 92%, var(--paper)));
+  box-shadow: inset 0 1px 0 var(--shine);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 13px 15px;
 }
 .ag-info { display: flex; flex-direction: column; gap: 2px; min-width: 200px; flex: 1; }

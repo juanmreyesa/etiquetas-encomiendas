@@ -144,11 +144,12 @@
 <ul class="lista">
   {% for e in recientes %}
   <li>
-    <a href="{{ url_for('detalle', envio_id=e.id) }}">
+    <a href="{{ url_for('detalle', envio_id=e.id) }}"{% if e.despachado_at %} class="done"{% endif %}>
       <span class="num">{{ t('pdf.number') }} {{ '%05d' % e.id }}</span>
       <span class="nombre">{{ e.dest_nombre }}</span>
       <span class="meta">{% if e.dest_localidad %}{{ e.dest_localidad }} ({{ e.dest_departamento }}){% else %}{{ e.dest_departamento }}{% endif %} · {{ fmt_dt(e.created_at) }}</span>
-      {% if e.paga_destino %}<span class="tag">{{ t('check.pays_dest') }}</span>{% endif %}
+      {% if e.despachado_at %}<span class="tag ok">✓ {{ t('tag.dispatched') }}</span>{% endif %}
+      {% if e.paga_destino and not e.despachado_at %}<span class="tag">{{ t('check.pays_dest') }}</span>{% endif %}
     </a>
   </li>
   {% endfor %}

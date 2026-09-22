@@ -17,7 +17,7 @@
 <ul class="lista">
   {% for e in envios %}
   <li>
-    <a href="{{ url_for('detalle', envio_id=e.id) }}">
+    <a href="{{ url_for('detalle', envio_id=e.id) }}"{% if e.despachado_at %} class="done"{% endif %}>
       <span class="num">{{ t('pdf.number') }} {{ '%05d' % e.id }}</span>
       <span class="nombre">{{ e.dest_nombre }}</span>
       <span class="meta">
@@ -25,8 +25,8 @@
         {{ t('delivery.agency_short') if e.entrega_tipo == 'agencia' else t('delivery.home_short') }} ·
         {{ fmt_dt(e.created_at) }}
       </span>
-      {% if e.despachado_at %}<span class="tag ok">{{ t('tag.dispatched') }}</span>{% endif %}
-      {% if e.paga_destino %}<span class="tag">{{ t('check.pays_dest') }}</span>{% endif %}
+      {% if e.despachado_at %}<span class="tag ok">✓ {{ t('tag.dispatched') }}</span>{% endif %}
+      {% if e.paga_destino and not e.despachado_at %}<span class="tag">{{ t('check.pays_dest') }}</span>{% endif %}
       {% if e.reimpresiones %}<span class="tag alt">{{ t('tag.reprints', n=e.reimpresiones) }}</span>{% endif %}
     </a>
   </li>
