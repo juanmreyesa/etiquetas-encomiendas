@@ -13,6 +13,12 @@
   <a class="btn primary" href="{{ url_for('destinatario_nuevo') }}">{{ t('btn.new_recipient') }}</a>
 </p>
 
+{% if s.eryops_url and s.eryops_user %}
+<form method="post" action="{{ url_for('importar_clientes') }}" class="export-bar">
+  <button type="submit" class="btn">{{ t('btn.import_eryops') }}</button>
+</form>
+{% endif %}
+
 {% if destinatarios %}
 <ul class="lista">
   {% for d in destinatarios %}

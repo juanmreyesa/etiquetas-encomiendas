@@ -11,7 +11,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py crypto.py db.py i18n.py labels.py mailer.py ./
+COPY app.py crypto.py db.py eryops.py i18n.py labels.py mailer.py ./
 COPY templates ./templates
 COPY static ./static
 
@@ -22,5 +22,9 @@ ENV ETIQUETAS_DB=/data/etiquetas.db \
 
 EXPOSE 8000
 
-# 2 workers alcanzan de sobra para uso doméstico; timeout amplio por si lp tarda
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "60", "app:app"]
+# 2 workers alcanzan de sobra para uso doméstico; timeout amplio por si lp tarda.
+# --threads: cada worker atiende varias requests, así una llamada lenta hacia
+# afuera (importar clientes, SMTP) no deja la app clavada. Seguro con SQLite
+# porque `db.get_conn()` abre una conexión por llamada, no una compartida.
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "4", \
+     "--timeout", "60", "app:app"]

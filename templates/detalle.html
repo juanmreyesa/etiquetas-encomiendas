@@ -53,6 +53,11 @@
       {{ t('dispatch.change_photo') if e.ticket_foto else t('dispatch.photo_optional') }}
       <input type="file" name="ticket" accept="image/*" capture="environment">
     </label>
+    {% if e.dest_email and s.notify_on_dispatch in ('1','true','on','yes') %}
+    <label class="check">
+      <input type="checkbox" name="sin_aviso"> {{ t('dispatch.no_email') }}
+    </label>
+    {% endif %}
     <button type="submit" class="primary">
       {{ t('dispatch.update') if e.despachado_at else t('dispatch.mark') }}
     </button>

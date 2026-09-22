@@ -443,3 +443,7 @@ dd { margin: 0; }
   main { animation: none; }
   * { transition: none !important; }
 }
+
+/* El botón Salir vive dentro de un form (POST), que no debe romper el header. */
+.header-tools .logout { display: contents; }
+.login-form { max-width: 22rem; }

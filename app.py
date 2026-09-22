@@ -13,8 +13,11 @@ import subprocess
 import tempfile
 from urllib.parse import urlparse
 
+from datetime import timedelta
+
 from flask import (Flask, Response, abort, flash, make_response, redirect,
-                   render_template, request, send_file, url_for)
+                   render_template, request, send_file, session, url_for)
+from werkzeug.security import check_password_hash, generate_password_hash
 from PIL import Image, ImageOps
 
 # Cota contra "decompression bombs": rechaza imágenes con demasiados píxeles
@@ -22,6 +25,7 @@ from PIL import Image, ImageOps
 Image.MAX_IMAGE_PIXELS = 64_000_000  # ~64 MP
 
 import crypto
+import eryops
 import db
 import i18n
 import mailer
@@ -29,15 +33,79 @@ from db import fmt_dt
 from labels import LOGOS_DIR, render_label
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "etiquetas-encomiendas-local")
+db.init_db()
+# La clave de sesión NO puede ser un default público: con ella cualquiera se firma
+# una cookie de "logueado". Si no viene por env se genera una al azar y se guarda
+# en la base, así sobrevive al reinicio sin quedar en el repo.
+app.secret_key = os.environ.get("SECRET_KEY") or db.get_or_create_secret()
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    # Lax y no Strict: el QR de la etiqueta abre /envios/<id> desde otra app y
+    # tiene que llegar logueado. Lax igual no manda la cookie en un POST de otro
+    # origen, que es el CSRF que importa acá.
+    SESSION_COOKIE_SAMESITE="Lax",
+    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
+)
 app.jinja_env.globals["fmt_dt"] = fmt_dt
+# cache-bust del CSS: mtime del archivo → cambia en cada rebuild, invalida el caché del navegador
+try:
+    _CSS_V = str(int(os.path.getmtime(os.path.join(app.static_folder, "style.css"))))
+except OSError:
+    _CSS_V = "0"
+app.jinja_env.globals["css_v"] = _CSS_V
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB por foto de ticket
 
 # Fotos de tickets: junto a la base, dentro del volumen ./data
 TICKETS_DIR = os.path.join(os.path.dirname(db.DB_PATH) or ".", "tickets")
 ALLOWED_IMG_EXT = {"jpg", "jpeg", "png", "webp"}
 
-db.init_db()
+
+# ---------------- acceso ----------------
+
+# Endpoints que se sirven sin sesión: la propia pantalla de login y los estáticos.
+_LIBRES = {"login", "static"}
+
+
+def auth_activa():
+    return bool(db.get_setting("auth_password_hash"))
+
+
+@app.before_request
+def _exigir_login():
+    """Contraseña única, opcional. Sin contraseña configurada la app queda como
+    estaba (uso LAN sin auth); en cuanto hay una, todo pide sesión."""
+    if request.endpoint in _LIBRES or not auth_activa():
+        return None
+    if session.get("auth"):
+        return None
+    if request.path.startswith("/api/"):
+        abort(401)
+    return redirect(url_for("login", next=request.full_path if request.query_string
+                            else request.path))
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if not auth_activa():
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        if check_password_hash(db.get_setting("auth_password_hash"),
+                               request.form.get("clave", "")):
+            session["auth"] = True
+            session.permanent = True
+            destino = request.form.get("next") or url_for("index")
+            # Sólo rutas internas: un `next` absoluto sería un open redirect.
+            if not destino.startswith("/") or destino.startswith("//"):
+                destino = url_for("index")
+            return redirect(destino)
+        flash(tr("flash.bad_password"), "error")
+    return render_template("login.html", next=request.args.get("next", ""))
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
 
 # ---------------- idioma / i18n ----------------
@@ -52,6 +120,15 @@ def tr(key, **kw):
     return i18n.t(key, current_lang(), **kw)
 
 
+@app.after_request
+def _no_cache_html(resp):
+    # el HTML es dinámico (estado despachado/pago); evitá que el navegador o el
+    # bfcache muestren una lista vieja tras despachar. Estáticos NO se tocan.
+    if resp.mimetype == "text/html":
+        resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
 @app.context_processor
 def _inject_globals():
     lang = current_lang()
@@ -62,6 +139,7 @@ def _inject_globals():
         "s": db.all_settings(),
         "regions": db.get_regions(),
         "agencies": db.get_agencies(),
+        "auth_activa": auth_activa,
     }
 
 
@@ -270,6 +348,8 @@ def index():
                 "dest_localidad": d["localidad"], "dest_email": d.get("email"),
                 "entrega_tipo": d["entrega_tipo"] or "agencia",
                 "entrega_detalle": d["entrega_detalle"],
+                # La agenda no guarda quién paga: vale el default del form.
+                "paga_destino": 1,
             }
     return render_template("index.html", recientes=recientes, pre=pre,
                            remitentes=db.listar_remitentes(),
@@ -292,7 +372,9 @@ def crear():
     data = dict(resolver_remitente(request.form))
     data.update({
         "dest_nombre": nombre,
-        "dest_cedula": db.solo_digitos(request.form.get("dest_cedula")),
+        # norm_doc y no solo_digitos: un pasaporte ("A22018728") perdía la letra
+        # y la etiqueta salía con un documento que no es el de la persona.
+        "dest_cedula": db.norm_doc(request.form.get("dest_cedula")),
         "dest_celular": db.norm_tel(request.form.get("dest_celular")),
         "dest_departamento": departamento,
         "dest_localidad": (request.form.get("dest_localidad") or "").strip(),
@@ -399,7 +481,8 @@ def despachar(envio_id):
     db.marcar_despachado(envio_id, foto=res)
     base = tr("flash.dispatch_updated") if ya_estaba else tr("flash.dispatched")
     flash(base + (tr("flash.photo_saved") if res else ""), "ok")
-    _notificar(db.get_envio(envio_id), "dispatch")
+    if not request.form.get("sin_aviso"):
+        _notificar(db.get_envio(envio_id), "dispatch")
     return redirect(url_for("detalle", envio_id=envio_id))
 
 
@@ -522,6 +605,46 @@ def destinatario_actualizar(dest_id):
     return redirect(url_for("destinatarios"))
 
 
+@app.route("/destinatarios/importar", methods=["POST"])
+def importar_clientes():
+    """Trae los clientes de Eryops y los mezcla en la agenda (upsert por cédula)."""
+    url = db.get_setting("eryops_url")
+    usuario = db.get_setting("eryops_user")
+    clave = crypto.dec(db.get_setting("eryops_password"))
+    if not (url and usuario and clave):
+        flash(tr("flash.import_not_configured"), "error")
+        return redirect(url_for("destinatarios"))
+    try:
+        clientes = eryops.traer_clientes(url, usuario, clave)
+    except eryops.ErrorEryops as e:
+        flash(tr("flash.import_failed", msg=str(e)), "error")
+        return redirect(url_for("destinatarios"))
+    nuevos = actualizados = omitidos = 0
+    for c in clientes:
+        d = eryops.a_destinatario(c)
+        if not (d["nombre"] and d["cedula"]):
+            omitidos += 1          # sin nombre o sin documento no hay con qué agendarlo
+            continue
+        existente = db.destinatario_por_cedula(d["cedula"])
+        if existente:
+            # Merge: Eryops no sabe de departamento ni de por dónde se entrega
+            # (agencia vs dirección), así que en una ficha que ya existe esos
+            # campos son los que mandan y no se pisan.
+            fila = dict(existente)
+            fila.update({k: v for k, v in d.items()
+                         if v and k not in ("entrega_tipo", "entrega_detalle")})
+            db.actualizar_destinatario(existente["id"], fila)
+            actualizados += 1
+        else:
+            db.crear_destinatario(d)
+            nuevos += 1
+    flash(tr("flash.imported", nuevos=nuevos, actualizados=actualizados,
+             omitidos=omitidos), "ok")
+    if len(clientes) >= eryops.LIMITE:
+        flash(tr("flash.import_truncated", n=eryops.LIMITE), "error")
+    return redirect(url_for("destinatarios"))
+
+
 @app.route("/destinatarios/<int:dest_id>/eliminar", methods=["POST"])
 def destinatario_eliminar(dest_id):
     db.eliminar_destinatario(dest_id)
@@ -626,6 +749,7 @@ _SETTING_KEYS = [
     "brand_name", "language", "timezone_offset", "origin_region", "id_validation",
     "printer", "base_url", "color_primary", "color_primary_deep", "color_accent",
     "smtp_host", "smtp_port", "smtp_security", "smtp_user", "smtp_from",
+    "eryops_url", "eryops_user",
 ]
 _SETTING_BOOLS = ["smtp_enabled", "notify_on_print", "notify_on_dispatch"]
 
@@ -657,6 +781,16 @@ def admin_guardar():
     pw = request.form.get("smtp_password", "")
     if pw:
         cambios["smtp_password"] = crypto.enc(pw)
+    pw = request.form.get("eryops_password", "")
+    if pw:
+        cambios["eryops_password"] = crypto.enc(pw)
+    # Contraseña de acceso: se guarda HASHEADA (nunca en claro, ni cifrada:
+    # no hace falta poder leerla de vuelta). Vacío = no tocar.
+    pw = request.form.get("auth_password", "")
+    if request.form.get("quitar_auth"):
+        cambios["auth_password_hash"] = ""
+    elif pw:
+        cambios["auth_password_hash"] = generate_password_hash(pw)
     # logo de marca
     ok, val = _guardar_logo(request.files.get("logo"), "brand")
     if ok and val:

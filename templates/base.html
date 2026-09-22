@@ -63,6 +63,11 @@
          aria-label="{{ t('lang.switch_aria') }}">{{ t('lang.switch_to') }}</a>
       <button id="tema-toggle" class="tema-toggle" type="button"
               aria-label="{{ t('theme.aria') }}">🌓</button>
+      {% if auth_activa() and session.auth %}
+      <form method="post" action="{{ url_for('logout') }}" class="logout">
+        <button type="submit" class="lang-toggle">{{ t('btn.logout') }}</button>
+      </form>
+      {% endif %}
     </div>
   </header>
 

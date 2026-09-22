@@ -119,6 +119,32 @@
     <span>{{ t('check.notify_on_dispatch') }}</span>
   </label>
 
+  <h2>{{ t('heading.access') }}</h2>
+  <p class="meta">{{ t('help.auth') }}</p>
+  <label>{{ t('field.auth_password') }}
+    <input name="auth_password" type="password" value="" autocomplete="new-password">
+  </label>
+  {% if s.auth_password_hash %}
+  <label class="checkbox">
+    <input type="checkbox" name="quitar_auth">
+    <span>{{ t('check.remove_auth') }}</span>
+  </label>
+  {% endif %}
+
+  <h2>{{ t('heading.eryops') }}</h2>
+  <label>{{ t('field.eryops_url') }}
+    <input name="eryops_url" value="{{ s.eryops_url }}" placeholder="https://certificados.ejemplo.uy">
+  </label>
+  <div class="row">
+    <label>{{ t('field.eryops_user') }}
+      <input name="eryops_user" value="{{ s.eryops_user }}" autocomplete="off">
+    </label>
+    <label>{{ t('field.eryops_password') }}
+      <input name="eryops_password" type="password" value="" autocomplete="new-password"
+             placeholder="{{ '••••••••' if s.eryops_password else '' }}">
+    </label>
+  </div>
+
   <button type="submit" class="primary">{{ t('btn.save_settings') }}</button>
 </form>
 

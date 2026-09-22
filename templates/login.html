@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ t('page.login') }}{% endblock %}
+{% block content %}
+<h1>{{ t('page.login') }}</h1>
+
+<form method="post" class="login-form">
+  <input type="hidden" name="next" value="{{ next }}">
+  <label>{{ t('field.password') }}
+    <input name="clave" type="password" autocomplete="current-password" autofocus required>
+  </label>
+  <button type="submit" class="primary">{{ t('btn.enter') }}</button>
+</form>
+{% endblock %}

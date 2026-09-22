@@ -6,6 +6,7 @@ arranque; todo es editable desde la Admin UI sin tocar código ni redeploy.
 """
 import json
 import os
+import secrets
 import sqlite3
 import time
 from datetime import datetime, timezone, timedelta
@@ -54,6 +55,12 @@ _DEFAULT_SETTINGS = {
     "smtp_from": "",                  # ej. "Encomiendas <envios@dominio>"
     "notify_on_print": "1",           # avisar al imprimir la etiqueta
     "notify_on_dispatch": "1",        # avisar al marcar despachado (adjunta ticket)
+    # --- Importar clientes desde Eryops (opcional) ---
+    "eryops_url": "",                 # ej. https://certificados.ejemplo.uy
+    "eryops_user": "",                # usuario de servicio (rol LECTOR alcanza)
+    "eryops_password": "",            # cifrada at-rest, igual que la SMTP
+    # --- Acceso ---
+    "auth_password_hash": "",         # vacío = sin contraseña (LAN abierta)
 }
 
 # Cache de settings con TTL corto. Con gunicorn multi-worker cada proceso tiene el
@@ -321,25 +328,38 @@ def solo_digitos(s):
 # Normaliza una columna a sólo-dígitos dentro del SQL (la columna es un literal
 # controlado, nunca entrada del usuario -> seguro).
 def _norm(col):
-    return f"REPLACE(REPLACE(REPLACE({col},'.',''),'-',''),' ','')"
+    return f"REPLACE(REPLACE(REPLACE(REPLACE({col},'.',''),'-',''),' ',''),'+','')"
+
+
+def norm_doc(s):
+    """La MISMA normalización que `_norm()` hace en SQL, del lado de Python.
+
+    `solo_digitos` no sirve para comparar documentos con letra (pasaportes:
+    'A22018728'): el SQL deja la A y Python la saca, así que nunca matcheaban
+    y cada alta creaba una ficha nueva de la misma persona.
+    """
+    return (s or "").replace(".", "").replace("-", "").replace(" ", "").replace("+", "").upper()
 
 
 def autocompletar_destinatario(cedula="", celular=""):
     """Trae datos de un destinatario por cédula o celular (sólo-dígitos),
     buscando primero en la AGENDA y luego en envíos previos. Devuelve un dict
     con claves uniformes (nombre, cedula, celular, departamento, entrega_*)."""
-    ced = solo_digitos(cedula)
-    cel = solo_digitos(celular)
+    # norm_doc, NO solo_digitos: tiene que ser la misma normalización que `_norm()`
+    # aplica en SQL, o un pasaporte ('A22018728') y un teléfono con '+' nunca
+    # matchean aunque la ficha exista.
+    ced = norm_doc(cedula)
+    cel = norm_doc(celular)
     if not ced and not cel:
         return None
     sel_ag = ("SELECT nombre, cedula, celular, departamento, localidad, email, "
-              "entrega_tipo, entrega_detalle FROM destinatarios WHERE {cond}=? "
+              "entrega_tipo, entrega_detalle FROM destinatarios WHERE UPPER({cond})=? "
               "ORDER BY id DESC LIMIT 1")
     sel_en = ("SELECT dest_nombre AS nombre, dest_cedula AS cedula, "
               "dest_celular AS celular, dest_departamento AS departamento, "
               "dest_localidad AS localidad, dest_email AS email, "
               "entrega_tipo, entrega_detalle "
-              "FROM envios WHERE {cond}=? ORDER BY id DESC LIMIT 1")
+              "FROM envios WHERE UPPER({cond})=? ORDER BY id DESC LIMIT 1")
     intentos = []
     if ced:
         intentos.append((sel_ag.format(cond=_norm("cedula")), ced))
@@ -407,16 +427,22 @@ def eliminar_destinatario(dest_id):
 
 
 def _destinatario_por_cedula(cedula):
+    doc = norm_doc(cedula)
     digits = solo_digitos(cedula)
-    if not digits:
+    if not doc:
         return None
     with get_conn() as conn:
         row = conn.execute(
-            f"SELECT * FROM destinatarios WHERE {_norm('cedula')} = ? "
+            f"SELECT * FROM destinatarios WHERE UPPER({_norm('cedula')}) = ? "
+            f"   OR (? <> '' AND {_norm('cedula')} = ?) "
             "ORDER BY id DESC LIMIT 1",
-            (digits,),
+            (doc, digits, digits),
         ).fetchone()
         return dict(row) if row else None
+
+
+# Alias público: lo usa el import de clientes de Eryops.
+destinatario_por_cedula = _destinatario_por_cedula
 
 
 def agendar_desde_envio(data):
@@ -440,6 +466,30 @@ def agendar_desde_envio(data):
 
 
 # ---------------- Configuración (settings) ----------------
+
+def get_or_create_secret():
+    """Clave de firma de sesión, estable entre reinicios. Sólo se usa si no vino
+    `SECRET_KEY` por entorno.
+
+    Va a un archivo junto a la base y NO a `settings`: `all_settings()` se inyecta
+    entero en todas las plantillas, así que un secreto ahí queda a un `{{ s.x }}`
+    de distancia de salir impreso.
+    """
+    ruta = os.path.join(os.path.dirname(DB_PATH) or ".", "session.key")
+    try:
+        with open(ruta) as fh:
+            val = fh.read().strip()
+        if val:
+            return val
+    except OSError:
+        pass
+    val = secrets.token_urlsafe(32)
+    os.makedirs(os.path.dirname(ruta) or ".", exist_ok=True)
+    fd = os.open(ruta, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as fh:
+        fh.write(val)
+    return val
+
 
 def all_settings():
     """Devuelve todos los settings como dict {clave: valor}, con cache TTL."""

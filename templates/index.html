@@ -113,7 +113,7 @@
   </label>
 
   <label class="checkbox big">
-    <input type="checkbox" name="paga_destino" {{ 'checked' if pre and pre.paga_destino }}>
+    <input type="checkbox" name="paga_destino" {{ 'checked' if (pre.paga_destino if pre else true) }}>
     <span>{{ t('check.pays_dest') }}</span>
   </label>
 
